@@ -1,0 +1,15 @@
+# Node and frontend
+node_modules
+dist
+.vite
+
+# PythonBackend
+__pycache__
+.pyc
+saved_images
+uploads
+runs
+
+# System files
+.DS_Store
+.env

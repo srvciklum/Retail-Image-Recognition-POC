@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  fastapi-api:
+    build:
+      context: ./API For Image
+    container_name: fastapi-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./API For Image/saved_images:/app/saved_images
+
+  react-frontend:
+    build:
+      context: ./react-image-exchange-main
+    container_name: react-frontend
+    ports:
+      - "3000:80"
