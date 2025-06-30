@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import thresholds from '../data/thresholds.json';
-import '../ProductTable.css'
+import React, { useEffect, useState } from "react";
+import thresholds from "../data/thresholds.json";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ShoppingCart, AlertTriangle } from "lucide-react";
 
 interface DetectedCounts {
   [item: string]: number;
@@ -28,76 +32,95 @@ const ProductTable: React.FC<ProductTableProps> = ({ detectedCounts, emptyShelfI
 
   useEffect(() => {
     const items: Product[] = Object.entries(detectedCounts)
-    .filter(([item]) => item.toLowerCase() !== 'emptyspace')
-    .map(([item, count]) => {
-      const threshold = thresholds[item] ?? 10;
-      return {
-        item,
-        count,
-        threshold,
-        shouldOrder: count <= threshold,
-      };
-    });
+      .filter(([item]) => item.toLowerCase() !== "emptyspace")
+      .map(([item, count]) => {
+        const threshold = thresholds[item] ?? 10;
+        return {
+          item,
+          count,
+          threshold,
+          shouldOrder: count <= threshold,
+        };
+      });
     setProducts(items);
   }, [detectedCounts]);
 
   return (
-    <div className="max-w-2xl mx-auto p-4 border rounded-lg shadow">
-      <h2 className="text-lg font-semibold mb-3">Detected Product Counts</h2>
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border px-3 py-2">Product</th>
-            <th className="border px-3 py-2">Count</th>
-            <th className="border px-3 py-2">Threshold</th>
-            <th className="border px-3 py-2">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map(({ item, count, threshold, shouldOrder }) => (
-            <tr key={item}>
-              <td className="border px-3 py-2 capitalize">{item}</td>
-              <td className="border px-3 py-2 text-center">{count}</td>
-              <td className="border px-3 py-2 text-center">{threshold}</td>
-              <td className="border px-3 py-2 text-center">
-                <button
-                  disabled={!shouldOrder}
-                  onClick={() => handleOrder(item)}
-                  className={`px-2 py-1 rounded text-white text-xs ${
-                    shouldOrder ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
-                  }`}
+    <div className="space-y-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShoppingCart className="w-5 h-5" />
+            Inventory Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Product</TableHead>
+                <TableHead className="text-center">Count</TableHead>
+                <TableHead className="text-center">Threshold</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map(({ item, count, threshold, shouldOrder }) => (
+                <TableRow key={item}>
+                  <TableCell className="font-medium capitalize">{item}</TableCell>
+                  <TableCell className="text-center">
+                    <Badge variant={shouldOrder ? "destructive" : "secondary"}>{count}</Badge>
+                  </TableCell>
+                  <TableCell className="text-center text-muted-foreground">{threshold}</TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant={shouldOrder ? "default" : "secondary"}
+                      size="sm"
+                      disabled={!shouldOrder}
+                      onClick={() => handleOrder(item)}
+                    >
+                      {shouldOrder ? "Order Now" : "In Stock"}
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {emptyShelfItems.length > 0 && (
+        <Card className="border-red-100">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Empty Shelf Items
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3">
+              {emptyShelfItems.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-red-50/50 rounded-lg border border-red-100"
                 >
-                  Click to Order
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-{emptyShelfItems.length > 0 && (
-  <div className="mt-6">
-    <h2 className="text-lg font-semibold mb-3">🚫 Empty Shelf Items</h2>
-    <ul className="space-y-3">
-      {emptyShelfItems.map((item, index) => (
-        <li
-          key={index}
-          className="flex items-center justify-between bg-white shadow-md px-4 py-2 rounded-lg border border-gray-200"
-        >
-          <span className="text-gray-800 font-medium">{item}</span>
-          <button
-            onClick={() => handleOrder(item)}
-            className="px-2 py-1 rounded text-white text-xs bg-blue-600 hover:bg-blue-700"
-          >
-            Click to Order
-          </button>
-        </li>
-      ))}
-    </ul>
-  </div>
-)}
-
-</div>
-)};
+                  <div className="flex items-center gap-2">
+                    <Badge variant="destructive" className="uppercase">
+                      Empty
+                    </Badge>
+                    <span className="font-medium">{item}</span>
+                  </div>
+                  <Button size="sm" onClick={() => handleOrder(item)} className="bg-red-600 hover:bg-red-700">
+                    Order Now
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
 
 export default ProductTable;

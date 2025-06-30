@@ -68,7 +68,7 @@ async def analyze_image(image: UploadFile = File(...)):
 
         found = False
         for _, text, conf in ocr_result:
-            if conf > 0.8:
+            if conf > 0.7:
                 cleaned = text.strip().title()
                 empty_shelf_items.append(cleaned)
                 found = True
