@@ -966,7 +966,7 @@ export const PlanogramManager: React.FC = () => {
                     {planogram.shelves.map((shelf, shelfIndex) => (
                       <div key={shelfIndex} className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 border">
-                          <span className="text-sm font-medium">{shelf.row}</span>
+                          <span className="text-sm font-medium">{shelf.row + 1}</span>
                         </div>
                         <ScrollArea className="w-full rounded-lg border bg-muted/30 p-2">
                           <div
