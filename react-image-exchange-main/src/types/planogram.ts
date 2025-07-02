@@ -37,4 +37,5 @@ export interface ComplianceResult {
   issues: ComplianceIssue[];
   correct_placements: number;
   total_positions: number;
+  planogram_name: string;
 }

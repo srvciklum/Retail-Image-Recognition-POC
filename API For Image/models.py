@@ -51,4 +51,5 @@ class ComplianceResult(BaseModel):
     compliance_score: float = Field(..., description="Compliance score (0-100)")
     issues: List[ComplianceIssue] = Field(default_factory=list, description="List of compliance issues found")
     correct_placements: int = Field(..., description="Number of correctly placed products")
-    total_positions: int = Field(..., description="Total number of positions checked") 
+    total_positions: int = Field(..., description="Total number of positions checked")
+    planogram_name: str = Field(..., description="Name of the planogram used for compliance check") 

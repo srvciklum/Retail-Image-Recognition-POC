@@ -27,6 +27,7 @@ interface ComplianceResults {
   issues: ComplianceIssue[];
   correct_placements: number;
   total_positions: number;
+  planogram_name: string;
 }
 
 interface Props {
@@ -92,6 +93,9 @@ export const ComplianceResults: React.FC<Props> = ({ results }) => {
           <h2 className="text-2xl font-bold">Planogram Compliance</h2>
           <p className="text-muted-foreground">
             {results.correct_placements} of {results.total_positions} positions correct
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Using planogram: <span className="font-medium text-foreground">{results.planogram_name}</span>
           </p>
         </div>
         <div className="flex items-center gap-2">

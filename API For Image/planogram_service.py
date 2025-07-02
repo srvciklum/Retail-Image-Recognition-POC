@@ -343,7 +343,8 @@ class PlanogramService:
                 compliance_score=compliance_score,
                 issues=grouped_issues,
                 correct_placements=correct_placements,
-                total_positions=total_positions
+                total_positions=total_positions,
+                planogram_name=planogram.name
             )
             logger.debug(f"Final compliance result: {result}")
             return result
