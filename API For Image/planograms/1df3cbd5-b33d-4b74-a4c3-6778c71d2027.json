@@ -1,0 +1,131 @@
+{
+  "id": "1df3cbd5-b33d-4b74-a4c3-6778c71d2027",
+  "name": "test - grip - planogram",
+  "shelves": [
+    {
+      "row": 0,
+      "sections": [
+        {
+          "column": 0,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": [
+            "Original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        },
+        {
+          "column": 1,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": [
+            "Original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        },
+        {
+          "column": 2,
+          "expected_product": "sprite",
+          "allowed_variants": [
+            "original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        },
+        {
+          "column": 3,
+          "expected_product": "sprite",
+          "allowed_variants": [
+            "original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        }
+      ]
+    },
+    {
+      "row": 1,
+      "sections": [
+        {
+          "column": 0,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": [
+            "Original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        },
+        {
+          "column": 1,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": [
+            "Original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        },
+        {
+          "column": 2,
+          "expected_product": "sprite",
+          "allowed_variants": [
+            "original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        },
+        {
+          "column": 3,
+          "expected_product": "sprite",
+          "allowed_variants": [
+            "original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        }
+      ]
+    },
+    {
+      "row": 2,
+      "sections": [
+        {
+          "column": 0,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": [
+            "Original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        },
+        {
+          "column": 1,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": [
+            "Original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        },
+        {
+          "column": 2,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": [
+            "Original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        },
+        {
+          "column": 3,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": [
+            "Original"
+          ],
+          "min_quantity": 1,
+          "max_quantity": 1
+        }
+      ]
+    }
+  ],
+  "created_at": "2025-07-02T12:18:39.432227",
+  "updated_at": "2025-07-02T12:18:39.432227"
+}
