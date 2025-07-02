@@ -325,15 +325,10 @@ export const PlanogramManager: React.FC = () => {
 
     if (uploadedImage) {
       return (
-        <div className="relative">
-          <img
-            src={uploadedImage}
-            alt="Shelf layout"
-            className="w-full h-auto rounded-lg shadow-lg"
-            style={{ maxHeight: "600px", objectFit: "contain" }}
-          />
+        <div className="relative w-full h-auto">
+          <img src={uploadedImage} alt="Shelf layout" className="w-full h-auto object-contain" />
           <div
-            className="absolute inset-0 grid gap-1 p-4"
+            className="absolute inset-0 grid gap-1 p-1"
             style={{
               gridTemplateRows: `repeat(${gridSize.rows}, 1fr)`,
               gridTemplateColumns: `repeat(${gridSize.columns}, 1fr)`,
@@ -354,20 +349,20 @@ export const PlanogramManager: React.FC = () => {
                       style={{
                         gridRow: rowIndex + 1,
                         gridColumn: columnIndex + 1,
-                        minHeight: "60px",
+                        minHeight: "25px",
                       }}
                     >
                       {section.expected_product ? (
                         <div className="flex flex-col items-center gap-1 p-1">
-                          <div className="w-6 h-6 rounded-full bg-success/80 flex items-center justify-center">
-                            <Package className="w-4 h-4 text-white" />
+                          <div className="w-3 h-3 rounded-full bg-success/80 flex items-center justify-center">
+                            <Package className="w-2 h-2 text-white" />
                           </div>
-                          <span className="text-xs font-bold text-white bg-black/50 px-1 rounded text-center">
+                          <span className="text-xs font-bold text-white bg-black/60 px-1 rounded text-center leading-tight">
                             {section.expected_product}
                           </span>
                         </div>
                       ) : (
-                        <div className="text-xs text-white bg-black/50 px-2 py-1 rounded text-center">Drop here</div>
+                        <div className="text-xs text-white bg-black/60 px-1 py-1 rounded text-center">Drop</div>
                       )}
                       {provided.placeholder}
                     </div>
@@ -808,8 +803,8 @@ export const PlanogramManager: React.FC = () => {
                       <DragDropContext onDragEnd={handleDragEnd}>
                         <div className="flex gap-6 min-h-[600px]">
                           <div className="flex-1 p-6">
-                            <div className="w-full h-[550px] border rounded-lg bg-muted/20 overflow-auto p-4">
-                              <div className="min-w-fit min-h-fit">{renderPlanogramGrid()}</div>
+                            <div className="w-full h-[550px] border rounded-lg bg-slate-100 dark:bg-slate-800 p-4">
+                              <div className="w-full h-full">{renderPlanogramGrid()}</div>
                             </div>
                           </div>
                           <div className="w-96 border-l">
