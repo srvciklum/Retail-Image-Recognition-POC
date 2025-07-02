@@ -4,7 +4,7 @@ import { ImageDisplay } from "@/components/ImageDisplay";
 import { toast } from "sonner";
 import ProductTable from "../components/ProductTable";
 import { Button } from "@/components/ui/button";
-import { RefreshCcw, Plus, Upload } from "lucide-react";
+import { RefreshCcw, Plus, Upload, Grid } from "lucide-react";
 import { ComplianceResults } from "@/components/ComplianceResults";
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -108,12 +108,13 @@ const Index = () => {
               <Dialog open={showPlanogramDialog} onOpenChange={setShowPlanogramDialog}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2">
+                    <Grid className="w-5 h-5 text-primary" />
                     Planogram Management
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 flex flex-col">
                   <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
-                    <DialogTitle>Planogram Management</DialogTitle>
+                    <DialogTitle className="flex items-center gap-2">Planogram Management</DialogTitle>
                   </DialogHeader>
                   <div className="flex-1 overflow-auto">
                     <div className="p-6">

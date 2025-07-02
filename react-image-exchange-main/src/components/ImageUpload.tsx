@@ -88,7 +88,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, isLoadi
                 <SelectValue placeholder="Choose a planogram" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No planogram</SelectItem>
+                <SelectItem value="none">Shelf Detection</SelectItem>
                 {planograms.map((planogram) => (
                   <SelectItem key={planogram.id} value={planogram.id}>
                     {planogram.name}
