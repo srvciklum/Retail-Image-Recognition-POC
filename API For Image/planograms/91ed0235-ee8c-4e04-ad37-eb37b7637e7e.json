@@ -1,0 +1,81 @@
+{
+  "id": "91ed0235-ee8c-4e04-ad37-eb37b7637e7e",
+  "name": "test - planogram",
+  "shelves": [
+    {
+      "row": 1,
+      "sections": [
+        {
+          "column": 1,
+          "expected_product": "sprite",
+          "allowed_variants": ["Original", "Sprite"],
+          "min_quantity": 1,
+          "max_quantity": 2
+        },
+        {
+          "column": 2,
+          "expected_product": "sprite",
+          "allowed_variants": ["Original", "Sprite"],
+          "min_quantity": 1,
+          "max_quantity": 2
+        },
+        {
+          "column": 3,
+          "expected_product": "sprite",
+          "allowed_variants": ["Original", "Sprite"],
+          "min_quantity": 1,
+          "max_quantity": 2
+        }
+      ]
+    },
+    {
+      "row": 2,
+      "sections": [
+        {
+          "column": 1,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": ["Original", "coca-cola", "coke"],
+          "min_quantity": 1,
+          "max_quantity": 2
+        },
+        {
+          "column": 2,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": ["Original", "coca-cola", "coke"],
+          "min_quantity": 1,
+          "max_quantity": 2
+        },
+        {
+          "column": 3,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": ["Original", "coca-cola", "coke"],
+          "min_quantity": 1,
+          "max_quantity": 2
+        },
+        {
+          "column": 4,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": ["Original", "coca-cola", "coke"],
+          "min_quantity": 1,
+          "max_quantity": 2
+        },
+        {
+          "column": 5,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": ["Original", "coca-cola", "coke"],
+          "min_quantity": 1,
+          "max_quantity": 2
+        },
+        {
+          "column": 6,
+          "expected_product": "Coca-Cola",
+          "allowed_variants": ["Original", "coca-cola", "coke"],
+          "min_quantity": 1,
+          "max_quantity": 2
+        }
+      ]
+    }
+  ],
+  "created_at": "2025-07-01T14:13:53.636919",
+  "updated_at": "2025-07-01T14:17:50.618249"
+}
