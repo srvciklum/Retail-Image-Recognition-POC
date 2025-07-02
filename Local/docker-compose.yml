@@ -13,6 +13,10 @@ services:
   react-frontend:
     build:
       context: ./react-image-exchange-main
+      args:
+        VITE_API_BASE_URL: http://fastapi-api:8000
     container_name: react-frontend
     ports:
       - "3000:80"
+    depends_on:
+      - fastapi-api

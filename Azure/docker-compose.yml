@@ -3,20 +3,18 @@ version: '3.8'
 services:
   fastapi-api:
     build:
-      context: ./API For Image
+      context: ./api-app
     container_name: fastapi-api
     ports:
       - "8000:8000"
     volumes:
-      - ./API For Image/saved_images:/app/saved_images
+      - ./api-app/saved_images:/app/saved_images
 
   react-frontend:
     build:
-      context: ./react-image-exchange-main
+      context: ./react-ui
       args:
-        VITE_API_BASE_URL: http://localhost:8000
+        VITE_API_BASE_URL: http://20.235.180.208:8000
     container_name: react-frontend
     ports:
       - "3000:80"
-    depends_on:
-      - fastapi-api
