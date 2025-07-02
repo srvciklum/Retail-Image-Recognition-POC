@@ -655,63 +655,100 @@ export const PlanogramManager: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {planograms.map((planogram) => (
-            <Card key={planogram.id} className="bg-card hover:border-primary/50 transition-colors">
-              <CardHeader className="pb-2">
+            <Card
+              key={planogram.id}
+              className="bg-card hover:border-primary/50 transition-colors h-[400px] flex flex-col overflow-hidden"
+            >
+              <CardHeader className="pb-3 flex-shrink-0 border-b">
                 <CardTitle className="flex items-center justify-between">
-                  <span className="text-lg">{planogram.name}</span>
+                  <div className="flex items-center gap-2">
+                    <Grid className="w-5 h-5 text-primary" />
+                    <span className="text-lg">{planogram.name}</span>
+                  </div>
                   <div className="flex gap-1">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEditPlanogram(planogram)}
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 hover:text-destructive"
+                      className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => handleDeletePlanogram(planogram.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {planogram.shelves.length} {planogram.shelves.length === 1 ? "shelf" : "shelves"}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1">
-                  {planogram.shelves.map((shelf, shelfIndex) => (
-                    <div key={shelfIndex} className="flex items-center gap-1">
-                      <div className="w-8 text-sm text-muted-foreground text-right">{shelf.row}</div>
-                      <div
-                        className="flex-1 grid"
-                        style={{
-                          gridTemplateColumns: `repeat(${Math.max(
-                            ...planogram.shelves.map((s) => Math.max(...s.sections.map((sec) => sec.column)) + 1)
-                          )}, 1fr)`,
-                        }}
-                      >
-                        {shelf.sections.map((section, sectionIndex) => (
-                          <div
-                            key={sectionIndex}
-                            className="aspect-square rounded-sm bg-blue-50 border border-blue-200 relative group hover:bg-blue-100 transition-colors"
-                            style={{ gridColumn: section.column + 1 }}
-                          >
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-blue-600/80 rounded-sm transition-opacity">
-                              <span className="text-[10px] text-white text-center px-1 font-medium">
-                                {section.expected_product}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-4 mt-1">
+                  <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                    {planogram.shelves.length} {planogram.shelves.length === 1 ? "shelf" : "shelves"}
+                  </Badge>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                    {planogram.shelves.reduce((acc, shelf) => acc + shelf.sections.length, 0)} sections
+                  </Badge>
                 </div>
+              </CardHeader>
+              <CardContent className="flex-1 min-h-0 p-0">
+                <ScrollArea className="h-full">
+                  <div className="space-y-2 p-6">
+                    {planogram.shelves.map((shelf, shelfIndex) => (
+                      <div key={shelfIndex} className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 border">
+                          <span className="text-sm font-medium">{shelf.row}</span>
+                        </div>
+                        <ScrollArea className="w-full rounded-lg border bg-muted/30 p-2">
+                          <div
+                            className="flex gap-2"
+                            style={{
+                              minWidth: `${
+                                Math.max(
+                                  ...planogram.shelves.map((s) => Math.max(...s.sections.map((sec) => sec.column)) + 1)
+                                ) * 40
+                              }px`,
+                              width: `${
+                                Math.max(
+                                  ...planogram.shelves.map((s) => Math.max(...s.sections.map((sec) => sec.column)) + 1)
+                                ) * 40
+                              }px`,
+                            }}
+                          >
+                            {shelf.sections.map((section, sectionIndex) => (
+                              <div
+                                key={sectionIndex}
+                                className="w-10 h-10 rounded-md bg-background border shadow-sm relative group hover:border-primary hover:shadow-md transition-all flex-shrink-0"
+                                style={{ order: section.column }}
+                              >
+                                {section.expected_product ? (
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                      <Package className="w-4 h-4 text-primary" />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                                      <span className="text-xs text-muted-foreground">E</span>
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-primary/90 rounded-md transition-all">
+                                  <span className="text-[10px] text-white text-center px-1 font-medium">
+                                    {section.expected_product || "Empty"}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
           ))}

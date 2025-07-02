@@ -104,20 +104,21 @@ const Index = () => {
               </h1>
               <p className="text-muted-foreground mt-2">Analyze store shelves with advanced AI detection</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 justify-start">
               <Dialog open={showPlanogramDialog} onOpenChange={setShowPlanogramDialog}>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Create Planogram
+                    Planogram Management
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0">
-                  <DialogHeader className="px-6 py-4 border-b">
+                <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 flex flex-col">
+                  <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
                     <DialogTitle>Planogram Management</DialogTitle>
                   </DialogHeader>
-                  <div className="flex-1 overflow-auto p-6">
-                    <PlanogramManager />
+                  <div className="flex-1 overflow-auto">
+                    <div className="p-6">
+                      <PlanogramManager />
+                    </div>
                   </div>
                 </DialogContent>
               </Dialog>
