@@ -129,27 +129,138 @@ async def delete_planogram(planogram_id: str):
     return {"message": "Planogram deleted successfully"}
 
 def detect_shelf_layout(image_path: str):
-    """Detect shelf layout and assign row/column coordinates to detected products"""
+    """Detect shelf layout dynamically and assign row/column coordinates to detected products"""
     image = cv2.imread(image_path)
     height, width, _ = image.shape
     
-    # Simple shelf detection - divide image into rows
-    # In a real implementation, this would use more sophisticated shelf detection
-    num_rows = 3  # Assuming 3 shelves
-    row_height = height // num_rows
+    # Use the same dynamic grid detection logic as /detect-grid endpoint
+    def detect_dynamic_grid(img):
+        # Convert to grayscale
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (3, 3), 0)
+        edges = cv2.Canny(blurred, 50, 150)
+        
+        # Look for horizontal lines (shelf separators)
+        h_kernel_size = max(20, width // 15)
+        horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (h_kernel_size, 1))
+        horizontal_lines = cv2.morphologyEx(edges, cv2.MORPH_OPEN, horizontal_kernel)
+        
+        h_contours, _ = cv2.findContours(horizontal_lines, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        shelf_separators = []
+        
+        for contour in h_contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            area = cv2.contourArea(contour)
+            if w > width * 0.4 and area > width * 0.3:
+                shelf_separators.append(y + h // 2)
+        
+        # Look for vertical lines (product separators)  
+        v_kernel_size = max(15, height // 20)
+        vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, v_kernel_size))
+        vertical_lines = cv2.morphologyEx(edges, cv2.MORPH_OPEN, vertical_kernel)
+        
+        v_contours, _ = cv2.findContours(vertical_lines, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        product_separators = []
+        
+        for contour in v_contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            area = cv2.contourArea(contour)
+            if h > height * 0.25 and area > height * 0.15:
+                product_separators.append(x + w // 2)
+        
+        # Filter close lines
+        def filter_close_lines(lines, min_distance):
+            if not lines:
+                return []
+            filtered = [lines[0]]
+            for line in sorted(lines)[1:]:
+                if line - filtered[-1] >= min_distance:
+                    filtered.append(line)
+            return filtered
+        
+        shelf_separators = filter_close_lines(shelf_separators, height * 0.15)
+        product_separators = filter_close_lines(product_separators, width * 0.08)
+        
+        # Create grid lines
+        h_lines = [0] + shelf_separators + [height]
+        v_lines = [0] + product_separators + [width]
+        
+        h_lines = sorted(set(h_lines))
+        v_lines = sorted(set(v_lines))
+        
+        rows = len(h_lines) - 1
+        cols = len(v_lines) - 1
+        
+        # Validation and fallback
+        if (rows > 6 or cols > 8 or rows < 1 or cols < 1 or 
+            (rows == 1 and cols <= 2) or  # Single row with <=2 cols is unrealistic
+            (cols == 1 and rows <= 2)):   # Single column with <=2 rows is unrealistic
+            raise ValueError("Grid detection failed validation")
+            
+        return rows, cols, h_lines, v_lines
+    
+    # Try dynamic detection first
+    try:
+        num_rows, num_cols, h_lines, v_lines = detect_dynamic_grid(image)
+        logger.debug(f"Dynamic grid detection in analyze: {num_rows} rows x {num_cols} columns")
+    except Exception as e:
+        logger.warning(f"Dynamic grid detection failed in analyze: {e}, using intelligent fallback")
+        
+        # Intelligent fallback based on image characteristics
+        aspect_ratio = width / height
+        
+        if aspect_ratio > 2.5:  # Very wide - likely single shelf
+            num_rows = 1
+            num_cols = min(6, max(3, int(width / 150)))
+        elif aspect_ratio > 1.8:  # Wide - likely 2 shelves  
+            num_rows = 2
+            num_cols = min(6, max(3, int(width / 120)))
+        elif aspect_ratio > 1.2:  # Moderate - likely 2-3 shelves
+            num_rows = 2 if height < 500 else 3
+            num_cols = min(5, max(3, int(width / 100)))
+        elif aspect_ratio > 0.8:  # Square - likely 3 shelves
+            num_rows = 3
+            num_cols = min(4, max(2, int(width / 150)))
+        else:  # Tall - likely 3-4 shelves
+            num_rows = min(4, max(3, int(height / 150)))
+            num_cols = min(3, max(2, int(width / 200)))
+        
+        logger.debug(f"Fallback grid in analyze: {num_rows} rows x {num_cols} columns")
+        
+        # Create evenly spaced grid lines
+        h_lines = [int(i * height / num_rows) for i in range(num_rows + 1)]
+        v_lines = [int(i * width / num_cols) for i in range(num_cols + 1)]
+    
+    # Calculate grid cell dimensions
+    row_heights = [h_lines[i+1] - h_lines[i] for i in range(num_rows)]
+    col_widths = [v_lines[i+1] - v_lines[i] for i in range(num_cols)]
     
     def assign_coordinates(box):
         x1, y1, x2, y2 = map(int, box.xyxy[0])
         center_y = (y1 + y2) // 2
         center_x = (x1 + x2) // 2
         
-        # Assign row based on vertical position (0-based)
-        row = center_y // row_height
-        
-        # Assign column based on horizontal position (divide width into 6 sections)
-        num_cols = 6
-        col_width = width // num_cols
-        column = center_x // col_width
+        # Assign row based on vertical position
+        row = 0
+        for i, h_line in enumerate(h_lines[1:]):
+            if center_y <= h_line:
+                row = i
+                break
+        else:
+            row = num_rows - 1
+            
+        # Assign column based on horizontal position
+        column = 0
+        for i, v_line in enumerate(v_lines[1:]):
+            if center_x <= v_line:
+                column = i
+                break
+        else:
+            column = num_cols - 1
+            
+        # Ensure bounds
+        row = max(0, min(num_rows - 1, row))
+        column = max(0, min(num_cols - 1, column))
         
         return row, column
 
@@ -412,92 +523,44 @@ async def detect_grid(image: UploadFile = File(...)):
             
             return max(1, rows), max(1, cols), h_lines, v_lines
 
-        # Try advanced detection first
+        # Try intelligent grid detection first
         detection_method = "computer_vision"
         try:
             num_rows, num_cols, h_lines, v_lines = detect_grid_structure(img)
-            logger.debug(f"Advanced detection result: {num_rows} rows, {num_cols} columns")
+            logger.debug(f"Computer vision detection result: {num_rows} rows, {num_cols} columns")
             
-            # Validate detected grid with more intelligent bounds checking
-            valid_detection = True
-            
-            # Check if grid is reasonable for retail shelves
-            if num_rows < 1 or num_rows > 8:
-                logger.warning(f"Detected rows ({num_rows}) outside reasonable bounds (1-8)")
-                valid_detection = False
-            
-            if num_cols < 1 or num_cols > 12:
-                logger.warning(f"Detected columns ({num_cols}) outside reasonable bounds (1-12)")
-                valid_detection = False
-            
-            # Check if the grid cells would be too small or too large
-            avg_cell_height = height / num_rows if num_rows > 0 else 0
-            avg_cell_width = width / num_cols if num_cols > 0 else 0
-            
-            if avg_cell_height < 30:  # Too small - likely over-segmented
-                logger.warning(f"Average cell height ({avg_cell_height:.1f}px) too small, likely over-segmented")
-                valid_detection = False
-            
-            if avg_cell_width < 40:  # Too small - likely over-segmented
-                logger.warning(f"Average cell width ({avg_cell_width:.1f}px) too small, likely over-segmented")
-                valid_detection = False
-            
-            if avg_cell_height > height * 0.8:  # Too large - likely under-segmented
-                logger.warning(f"Average cell height ({avg_cell_height:.1f}px) too large, likely under-segmented")
-                valid_detection = False
-            
-            if avg_cell_width > width * 0.7:  # Too large - likely under-segmented
-                logger.warning(f"Average cell width ({avg_cell_width:.1f}px) too large, likely under-segmented")
-                valid_detection = False
-            
-            # If detection seems invalid, force fallback
-            if not valid_detection:
-                raise ValueError("Detected grid failed validation checks")
+            # Validate the detection results with reasonable bounds
+            if (num_rows < 1 or num_rows > 6 or num_cols < 1 or num_cols > 8 or 
+                (num_rows == 1 and num_cols <= 2) or  # Single row with <=2 cols is unrealistic
+                (num_cols == 1 and num_rows <= 2)):   # Single column with <=2 rows is unrealistic
+                logger.warning(f"Detected grid ({num_rows}x{num_cols}) outside reasonable bounds or unrealistic, using fallback")
+                raise ValueError("Grid detection outside reasonable bounds or unrealistic")
                 
         except Exception as e:
-            logger.warning(f"Advanced grid detection failed: {e}, falling back to intelligent heuristic")
-            detection_method = "heuristic_fallback"
-            # Very conservative fallback for retail shelf characteristics
-            aspect_ratio = width / height
+            logger.warning(f"Computer vision detection failed: {e}, using intelligent fallback")
+            detection_method = "intelligent_fallback"
             
+            # Intelligent fallback based on image characteristics
+            aspect_ratio = width / height
             logger.debug(f"Image aspect ratio: {aspect_ratio:.2f}")
             
-            # Be extremely conservative - default to common scenarios
-            if aspect_ratio > 3.0:  # Very wide image, likely single row shelf
-                num_rows = 1 
-                num_cols = max(2, min(6, int(aspect_ratio)))
-                logger.debug(f"Very wide image detected, assuming single row with {num_cols} columns")
-            elif aspect_ratio > 2.0:  # Wide shelf display - typical 2-shelf scenario
-                num_rows = 2  # Conservative: assume 2 shelves for wide images
-                num_cols = max(2, min(4, int(width / 150)))  # Conservative column estimate
-                logger.debug(f"Wide shelf detected (2-shelf scenario): {num_rows} rows x {num_cols} columns")
-            elif aspect_ratio > 1.5:  # Moderately wide - still likely 2-3 shelves
-                if height < 400:  # Smaller image, be very conservative
-                    num_rows = 2
-                    num_cols = 2
-                else:
-                    num_rows = 2  # Default to 2 for this range
-                    num_cols = 3
-                logger.debug(f"Moderate width detected: {num_rows} rows x {num_cols} columns")
-            elif aspect_ratio > 1.0:  # Standard shelf view
-                # Default to 3 rows only for more square images
+            if aspect_ratio > 2.5:  # Very wide - likely single shelf
+                num_rows = 1
+                num_cols = min(6, max(3, int(width / 150)))
+            elif aspect_ratio > 1.8:  # Wide - likely 2 shelves  
+                num_rows = 2
+                num_cols = min(6, max(3, int(width / 120)))
+            elif aspect_ratio > 1.2:  # Moderate - likely 2-3 shelves
+                num_rows = 2 if height < 500 else 3
+                num_cols = min(5, max(3, int(width / 100)))
+            elif aspect_ratio > 0.8:  # Square - likely 3 shelves
                 num_rows = 3
-                num_cols = max(2, min(4, int(width / 120)))
-                logger.debug(f"Standard shelf detected: {num_rows} rows x {num_cols} columns")
-            elif aspect_ratio > 0.7:  # Square-ish, could be 3-4 shelves
-                num_rows = 3
-                num_cols = 2
-                logger.debug(f"Square shelf detected: {num_rows} rows x {num_cols} columns")
-            else:  # Tall image, likely multiple vertical shelves
-                num_rows = 4
-                num_cols = 2
-                logger.debug(f"Tall shelf detected: {num_rows} rows x {num_cols} columns")
+                num_cols = min(4, max(2, int(width / 150)))
+            else:  # Tall - likely 3-4 shelves
+                num_rows = min(4, max(3, int(height / 150)))
+                num_cols = min(3, max(2, int(width / 200)))
             
-            # Final conservative limits - much more restrictive
-            num_rows = max(1, min(5, num_rows))  # Max 5 rows instead of 8
-            num_cols = max(1, min(6, num_cols))  # Max 6 columns instead of 12
-            
-            logger.debug(f"Final heuristic result: {num_rows} rows x {num_cols} columns")
+            logger.debug(f"Intelligent fallback result: {num_rows} rows x {num_cols} columns")
             
             # Create evenly spaced grid lines
             h_lines = [int(i * height / num_rows) for i in range(num_rows + 1)]
