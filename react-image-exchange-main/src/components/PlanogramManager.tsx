@@ -658,14 +658,14 @@ export const PlanogramManager: React.FC = () => {
           }
         }}
       >
-        <DialogContent className="max-w-[90vw] w-full h-[90vh] flex flex-col gap-0 p-0 bg-background">
-          <DialogHeader className="px-6 py-4 border-b">
+        <DialogContent className="max-w-[95vw] w-full max-h-[95vh] flex flex-col gap-0 p-0 bg-background">
+          <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
             <DialogTitle>Create New Planogram</DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-hidden">
-            <div className="h-full flex flex-col">
-              <div className="px-6 py-4 space-y-4 border-b">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="space-y-0">
+              <div className="px-6 py-4 space-y-4 border-b flex-shrink-0">
                 <div>
                   <Label htmlFor="planogramName">Planogram Name</Label>
                   <Input
@@ -790,9 +790,9 @@ export const PlanogramManager: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex-1 min-h-0">
-                <Tabs defaultValue="layout" className="h-full flex flex-col">
-                  <div className="px-6 border-b">
+              <div className="min-h-[600px]">
+                <Tabs defaultValue="layout" className="flex flex-col">
+                  <div className="px-6 border-b flex-shrink-0">
                     <TabsList className="bg-muted h-10 w-fit">
                       <TabsTrigger value="layout" className="data-[state=active]:bg-background">
                         Layout Design
@@ -803,28 +803,28 @@ export const PlanogramManager: React.FC = () => {
                     </TabsList>
                   </div>
 
-                  <div className="flex-1 min-h-0">
-                    <TabsContent value="layout" className="h-full m-0 border-0">
+                  <div className="flex-1">
+                    <TabsContent value="layout" className="m-0 border-0">
                       <DragDropContext onDragEnd={handleDragEnd}>
-                        <div className="flex gap-6 h-full">
-                          <div className="flex-1 min-h-0 p-6">
-                            <ScrollArea className="h-full pr-4">{renderPlanogramGrid()}</ScrollArea>
+                        <div className="flex gap-6 min-h-[600px]">
+                          <div className="flex-1 p-6">
+                            <div className="w-full h-[550px] border rounded-lg bg-muted/20 overflow-auto p-4">
+                              <div className="min-w-fit min-h-fit">{renderPlanogramGrid()}</div>
+                            </div>
                           </div>
-                          <div className="w-96 min-h-0 border-l">
+                          <div className="w-96 border-l">
                             <div className="p-6">
                               <h3 className="font-medium mb-3">Available Products</h3>
-                              <ScrollArea className="h-[calc(100vh-280px)]">
-                                <div className="pr-4">{renderProductList()}</div>
-                              </ScrollArea>
+                              <div className="h-[500px] overflow-y-auto pr-2">{renderProductList()}</div>
                             </div>
                           </div>
                         </div>
                       </DragDropContext>
                     </TabsContent>
 
-                    <TabsContent value="products" className="h-full m-0 border-0">
-                      <div className="p-6">
-                        <ScrollArea className="h-[calc(100vh-280px)]">{renderProductsTab()}</ScrollArea>
+                    <TabsContent value="products" className="m-0 border-0">
+                      <div className="p-6 min-h-[600px]">
+                        <div className="h-[550px] overflow-y-auto pr-2">{renderProductsTab()}</div>
                       </div>
                     </TabsContent>
                   </div>
@@ -833,7 +833,7 @@ export const PlanogramManager: React.FC = () => {
             </div>
           </div>
 
-          <DialogFooter className="px-6 py-4 border-t">
+          <DialogFooter className="px-6 py-4 border-t bg-background mt-auto flex-shrink-0">
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
