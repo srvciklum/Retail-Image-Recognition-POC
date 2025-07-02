@@ -1,9 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Edit, Save, Grid, Package, Move, AlertCircle, Search, Pencil } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Edit,
+  Save,
+  Grid,
+  Package,
+  Move,
+  AlertCircle,
+  Search,
+  Pencil,
+  Upload,
+  Image,
+  X,
+} from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,6 +50,11 @@ export const PlanogramManager: React.FC = () => {
     variants: [""],
     category: "Beverages",
   });
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isDetectingGrid, setIsDetectingGrid] = useState(false);
+  const [gridDetected, setGridDetected] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -43,6 +62,15 @@ export const PlanogramManager: React.FC = () => {
     fetchPlanograms();
     fetchProducts();
   }, []);
+
+  // Cleanup image URL on unmount
+  useEffect(() => {
+    return () => {
+      if (uploadedImage) {
+        URL.revokeObjectURL(uploadedImage);
+      }
+    };
+  }, [uploadedImage]);
 
   const fetchProducts = async () => {
     try {
@@ -89,6 +117,108 @@ export const PlanogramManager: React.FC = () => {
     setActiveTab("layout");
     setError(null);
     setPlanogramName("");
+    setUploadedImage(null);
+    setImageFile(null);
+    setGridDetected(false);
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image size should be less than 10MB");
+      return;
+    }
+
+    setImageFile(file);
+
+    // Create preview URL
+    const imageUrl = URL.createObjectURL(file);
+    setUploadedImage(imageUrl);
+
+    // Detect grid automatically
+    await detectGrid(file);
+  };
+
+  const detectGrid = async (file: File) => {
+    setIsDetectingGrid(true);
+
+    try {
+      console.log("Starting grid detection for file:", file.name, "size:", file.size, "type:", file.type);
+
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch(`${apiBaseUrl}/detect-grid`, {
+        method: "POST",
+        body: formData,
+      });
+
+      console.log("Grid detection response status:", response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Grid detection failed:", response.status, errorText);
+        throw new Error(`Failed to detect grid: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("Grid detection result:", result);
+
+      if (result.grid_dimensions) {
+        const { rows, columns } = result.grid_dimensions;
+        setGridSize({ rows, columns });
+
+        // Update the planogram with detected grid size
+        if (editingPlanogram) {
+          const newShelves = Array.from({ length: rows }, (_, row) => ({
+            row,
+            sections: Array.from({ length: columns }, (_, column) => ({
+              column,
+              expected_product: "",
+              allowed_variants: [],
+              min_quantity: 1,
+              max_quantity: 1,
+            })),
+          }));
+
+          setEditingPlanogram({
+            ...editingPlanogram,
+            shelves: newShelves,
+          });
+        }
+
+        setGridDetected(true);
+        toast.success(`Grid detected: ${rows} rows × ${columns} columns`);
+      } else {
+        toast.error("Could not detect grid in the image");
+      }
+    } catch (error) {
+      console.error("Error detecting grid:", error);
+      toast.error("Failed to detect grid. Please try again.");
+    } finally {
+      setIsDetectingGrid(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    if (uploadedImage) {
+      URL.revokeObjectURL(uploadedImage);
+    }
+    setUploadedImage(null);
+    setImageFile(null);
+    setGridDetected(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleEditPlanogram = (planogram: Planogram) => {
@@ -154,6 +284,7 @@ export const PlanogramManager: React.FC = () => {
       setIsDialogOpen(false);
       setEditingPlanogram(null);
       setError(null);
+      handleRemoveImage(); // Clean up image state
       toast.success("Planogram saved successfully");
     } catch (error) {
       console.error("Error saving planogram:", error);
@@ -191,6 +322,63 @@ export const PlanogramManager: React.FC = () => {
 
   const renderPlanogramGrid = () => {
     if (!editingPlanogram) return null;
+
+    if (uploadedImage) {
+      return (
+        <div className="relative">
+          <img
+            src={uploadedImage}
+            alt="Shelf layout"
+            className="w-full h-auto rounded-lg shadow-lg"
+            style={{ maxHeight: "600px", objectFit: "contain" }}
+          />
+          <div
+            className="absolute inset-0 grid gap-1 p-4"
+            style={{
+              gridTemplateRows: `repeat(${gridSize.rows}, 1fr)`,
+              gridTemplateColumns: `repeat(${gridSize.columns}, 1fr)`,
+            }}
+          >
+            {editingPlanogram.shelves.map((shelf, rowIndex) =>
+              shelf.sections.map((section, columnIndex) => (
+                <Droppable key={`${rowIndex}-${columnIndex}`} droppableId={`${rowIndex}-${columnIndex}`}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={cn(
+                        "border-2 border-dashed border-white/60 rounded-md flex items-center justify-center transition-all backdrop-blur-sm",
+                        snapshot.isDraggingOver ? "bg-primary/30 border-primary border-solid" : "hover:bg-white/20",
+                        section.expected_product && "bg-success/30 border-success border-solid"
+                      )}
+                      style={{
+                        gridRow: rowIndex + 1,
+                        gridColumn: columnIndex + 1,
+                        minHeight: "60px",
+                      }}
+                    >
+                      {section.expected_product ? (
+                        <div className="flex flex-col items-center gap-1 p-1">
+                          <div className="w-6 h-6 rounded-full bg-success/80 flex items-center justify-center">
+                            <Package className="w-4 h-4 text-white" />
+                          </div>
+                          <span className="text-xs font-bold text-white bg-black/50 px-1 rounded text-center">
+                            {section.expected_product}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-white bg-black/50 px-2 py-1 rounded text-center">Drop here</div>
+                      )}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              ))
+            )}
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className="grid gap-2">
@@ -459,7 +647,17 @@ export const PlanogramManager: React.FC = () => {
         </Button>
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            handleRemoveImage(); // Clean up image state when dialog closes
+            setEditingPlanogram(null);
+            setError(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-[90vw] w-full h-[90vh] flex flex-col gap-0 p-0 bg-background">
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle>Create New Planogram</DialogTitle>
@@ -481,13 +679,19 @@ export const PlanogramManager: React.FC = () => {
 
                 <div>
                   <Label htmlFor="rows" className="text-sm">
-                    Grid Size
+                    Grid Size{" "}
+                    {gridDetected && (
+                      <Badge variant="secondary" className="ml-2 bg-success/20 text-success">
+                        Auto-detected
+                      </Badge>
+                    )}
                   </Label>
                   <div className="flex items-center gap-3">
                     <div className="w-28">
                       <Select
                         value={gridSize.rows.toString()}
                         onValueChange={(value) => handleGridSizeChange("rows", value)}
+                        disabled={isDetectingGrid}
                       >
                         <SelectTrigger className="bg-muted border-0 focus:ring-1 focus:ring-primary">
                           <SelectValue placeholder="Rows" />
@@ -506,6 +710,7 @@ export const PlanogramManager: React.FC = () => {
                       <Select
                         value={gridSize.columns.toString()}
                         onValueChange={(value) => handleGridSizeChange("columns", value)}
+                        disabled={isDetectingGrid}
                       >
                         <SelectTrigger className="bg-muted border-0 focus:ring-1 focus:ring-primary">
                           <SelectValue placeholder="Columns" />
@@ -520,6 +725,68 @@ export const PlanogramManager: React.FC = () => {
                       </Select>
                     </div>
                   </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm">Shelf Image (Optional)</Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Upload an image of your shelf to automatically detect the grid layout
+                  </p>
+
+                  {!uploadedImage ? (
+                    <div
+                      className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground mb-1">Click to upload shelf image</p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG, JPEG up to 10MB</p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <div className="border rounded-lg p-3 bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted">
+                            <img src={uploadedImage} alt="Uploaded shelf" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">Shelf image uploaded</p>
+                            <div className="flex items-center gap-2">
+                              {isDetectingGrid ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                  <span className="text-xs text-muted-foreground">Detecting grid...</span>
+                                </div>
+                              ) : gridDetected ? (
+                                <Badge variant="secondary" className="bg-success/20 text-success">
+                                  Grid detected: {gridSize.rows}×{gridSize.columns}
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="bg-destructive/20 text-destructive">
+                                  Grid detection failed
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleRemoveImage}
+                            className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -570,7 +837,12 @@ export const PlanogramManager: React.FC = () => {
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => setIsDialogOpen(false)}
+                onClick={() => {
+                  setIsDialogOpen(false);
+                  handleRemoveImage();
+                  setEditingPlanogram(null);
+                  setError(null);
+                }}
                 className="border-0 bg-muted hover:bg-muted/80"
               >
                 Cancel
