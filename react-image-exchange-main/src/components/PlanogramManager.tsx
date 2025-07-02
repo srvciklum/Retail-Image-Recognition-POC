@@ -325,7 +325,7 @@ export const PlanogramManager: React.FC = () => {
 
     if (uploadedImage) {
       return (
-        <div className="relative w-full h-auto">
+        <div className="relative w-full h-auto max-w-2xl mx-auto">
           <img src={uploadedImage} alt="Shelf layout" className="w-full h-auto object-contain" />
           <div
             className="absolute inset-0 grid gap-1 p-1"
