@@ -187,7 +187,7 @@ class PlanogramService:
                             column=section.column,
                             issue_type="out_of_stock",
                             expected=f"{shelf_key}: {section.expected_product}",
-                            found=f"{section.expected_product} is out of stock and needs restocking",
+                            found=f"Found empty space where {section.expected_product} should be and needs to be restocked",
                             severity="high"
                         )
                         shelf_issues[shelf_key].append(issue)
@@ -197,15 +197,15 @@ class PlanogramService:
                     # Get detected product at this position
                     detected = product_grid.get(grid_key)
                     
-                    # If no product detected and not marked as empty, count as out of stock
+                    # If no product detected and not marked as empty, count as undetected
                     if not detected:
                         total_checked_positions += 1
                         issue = ComplianceIssue(
                             row=shelf.row,
                             column=section.column,
-                            issue_type="out_of_stock",
+                            issue_type="undetected",
                             expected=f"{shelf_key}: {section.expected_product}",
-                            found=f"{section.expected_product} is out of stock and needs restocking",
+                            found=f"No product detected where {section.expected_product} should be and needs to be restocked",
                             severity="high"
                         )
                         shelf_issues[shelf_key].append(issue)
@@ -245,29 +245,6 @@ class PlanogramService:
                         issues.append(issue)
                     else:
                         correct_placements += 1
-                        # Check quantity
-                        if detected_quantity < section.min_quantity:
-                            issue = ComplianceIssue(
-                                row=shelf.row,
-                                column=section.column,
-                                issue_type="low_stock",
-                                expected=f"{shelf_key}: {section.expected_product}",
-                                found=f"{section.expected_product} is running low and needs restocking (current: {detected_quantity}, minimum: {section.min_quantity})",
-                                severity="medium"
-                            )
-                            shelf_issues[shelf_key].append(issue)
-                            issues.append(issue)
-                        elif detected_quantity > section.max_quantity:
-                            issue = ComplianceIssue(
-                                row=shelf.row,
-                                column=section.column,
-                                issue_type="overstocked",
-                                expected=f"{shelf_key}: {section.expected_product}",
-                                found=f"{section.expected_product} is overstocked (current: {detected_quantity}, maximum: {section.max_quantity})",
-                                severity="low"
-                            )
-                            shelf_issues[shelf_key].append(issue)
-                            issues.append(issue)
 
             # Calculate compliance score based only on positions we could check
             compliance_score = (correct_placements / total_checked_positions) * 100 if total_checked_positions > 0 else 0
@@ -280,8 +257,7 @@ class PlanogramService:
                     # Group by issue type and product
                     wrong_products = {}
                     out_of_stock = {}
-                    low_stock = {}
-                    overstocked = {}
+                    undetected = {}
                     
                     for issue in shelf_issue_list:
                         product = issue.expected.split(": ")[-1]  # Extract product name from expected field
@@ -289,10 +265,8 @@ class PlanogramService:
                             wrong_products[product] = wrong_products.get(product, 0) + 1
                         elif issue.issue_type == "out_of_stock":
                             out_of_stock[product] = out_of_stock.get(product, 0) + 1
-                        elif issue.issue_type == "low_stock":
-                            low_stock[product] = low_stock.get(product, 0) + 1
-                        elif issue.issue_type == "overstocked":
-                            overstocked[product] = overstocked.get(product, 0) + 1
+                        elif issue.issue_type == "undetected":
+                            undetected[product] = undetected.get(product, 0) + 1
                     
                     if wrong_products:
                         products_list = ", ".join(wrong_products.keys())
@@ -312,30 +286,19 @@ class PlanogramService:
                             column=-1,
                             issue_type="out_of_stock",
                             expected=f"{shelf_key}",
-                            found=f"{products_list} is out of stock and needs restocking",
+                            found=f"Found empty spaces where {products_list} should be and needs to be restocked",
                             severity="high"
                         ))
                     
-                    if low_stock:
-                        products_list = ", ".join(low_stock.keys())
+                    if undetected:
+                        products_list = ", ".join(undetected.keys())
                         grouped_issues.append(ComplianceIssue(
                             row=shelf.row,
                             column=-1,
-                            issue_type="low_stock",
+                            issue_type="undetected",
                             expected=f"{shelf_key}",
-                            found=f"{products_list} is running low and needs restocking",
-                            severity="medium"
-                        ))
-                    
-                    if overstocked:
-                        products_list = ", ".join(overstocked.keys())
-                        grouped_issues.append(ComplianceIssue(
-                            row=shelf.row,
-                            column=-1,
-                            issue_type="overstocked",
-                            expected=f"{shelf_key}",
-                            found=f"{products_list} is overstocked",
-                            severity="low"
+                            found=f"No products detected where {products_list} should be and needs to be restocked",
+                            severity="high"
                         ))
 
             result = ComplianceResult(
