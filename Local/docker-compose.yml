@@ -1,18 +1,31 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  fastapi-api:
+  api:
     build:
-      context: ./API For Image
-    container_name: fastapi-api
+      context: ../image-recognition-api
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      - ./API For Image/saved_images:/app/saved_images
+      - ../image-recognition-api/saved_images:/app/saved_images
+      - ../image-recognition-api/uploads:/app/uploads
+      - ../image-recognition-api/products:/app/products
+      - ../image-recognition-api/planograms:/app/planograms
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
 
-  react-frontend:
+  frontend:
     build:
-      context: ./react-image-exchange-main
-    container_name: react-frontend
+      context: ../react-image-exchange-main
+      dockerfile: DevelopmentDockerfile
     ports:
-      - "3000:80"
+      - "5173:5173"
+    volumes:
+      - ../react-image-exchange-main:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    depends_on:
+      - api
