@@ -80,7 +80,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, isLoadi
             <Label htmlFor="planogram" className="text-base font-medium">
               Select Planogram
             </Label>
-            <p className="text-sm text-muted-foreground">Choose a planogram to check shelf compliance</p>
+            <p className="text-sm text-muted-foreground">
+              Select a planogram for automated shelf analysis and compliance checking
+            </p>
           </div>
           <div className="sm:w-[300px]">
             <Select value={selectedPlanogramId} onValueChange={setSelectedPlanogramId}>
@@ -88,10 +90,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, isLoadi
                 <SelectValue placeholder="Choose a planogram" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Shelf Detection</SelectItem>
+                <SelectItem value="none">Shelf Detection(only)</SelectItem>
                 {planograms.map((planogram) => (
                   <SelectItem key={planogram.id} value={planogram.id}>
-                    {planogram.name}
+                    {planogram.name} (planogram compliance)
                   </SelectItem>
                 ))}
               </SelectContent>
