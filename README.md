@@ -168,36 +168,21 @@ This POC demonstrates how AI-powered image recognition can transform retail oper
 
 ```
 Retail-Image-Recognition-POC/
-├── image-recognition-api/           # FastAPI Backend Service
-│   ├── app/                        # Application package
-│   │   ├── api/                   # API endpoints
-│   │   │   └── v1/               # API version 1
-│   │   ├── config/               # Configuration settings
-│   │   ├── core/                 # Core functionality
-│   │   ├── models/               # Data models and schemas
-│   │   └── services/             # Business logic services
-│   ├── planograms/               # Planogram JSON storage
-│   ├── products/                 # Product definitions
-│   ├── saved_images/             # Processed image storage
-│   ├── uploads/                  # Temporary upload storage
-│   ├── Dockerfile               # Container definition
-│   └── requirements.txt         # Python dependencies
-├── react-image-exchange-main/    # React Frontend
+├── API For Image/                    # FastAPI Backend
+│   ├── main.py                      # Main application entry
+│   ├── models.py                    # Data models and schemas
+│   ├── planogram_service.py         # Planogram management logic
+│   ├── product_service.py           # Product detection service
+│   ├── best.pt                     # Trained YOLO model
+│   └── requirements.txt             # Python dependencies
+├── react-image-exchange-main/        # React Frontend
 │   ├── src/
-│   │   ├── components/          # Reusable UI components
-│   │   │   ├── features/       # Feature-specific components
-│   │   │   ├── layout/        # Layout components
-│   │   │   └── ui/           # Base UI components
-│   │   ├── hooks/             # Custom React hooks
-│   │   ├── lib/              # Utility functions
-│   │   ├── services/         # API integration
-│   │   └── types/           # TypeScript definitions
-│   ├── public/              # Static assets
-│   ├── Dockerfile          # Production container
-│   └── DevelopmentDockerfile # Development container
-├── Local/                  # Local development setup
-│   └── docker-compose.yml  # Local container orchestration
-└── docker-compose.yml      # Production container orchestration
+│   │   ├── components/             # Reusable UI components
+│   │   ├── pages/                  # Application pages
+│   │   ├── services/               # API integration
+│   │   └── types/                  # TypeScript definitions
+│   └── package.json                # Node.js dependencies
+└── docker-compose.yml               # Container orchestration
 ```
 
 ### **Key APIs**
@@ -244,9 +229,9 @@ docker-compose up --build
 
 ```bash
 # Backend development
-cd image-recognition-api
+cd "API For Image"
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn main:app --reload
 
 # Frontend development
 cd react-image-exchange-main

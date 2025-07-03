@@ -61,11 +61,11 @@ coverage/
 *.sublime-project
 
 # Project specific
-image-recognition-api/saved_images/*
-!image-recognition-api/saved_images/.gitkeep
-image-recognition-api/uploads/*
-!image-recognition-api/uploads/.gitkeep
-image-recognition-api/runs/detect/predict*/
+API For Image/saved_images/*
+!API For Image/saved_images/.gitkeep
+API For Image/uploads/*
+!API For Image/uploads/.gitkeep
+API For Image/runs/detect/predict*/
 *.pt
 *.pth
 *.onnx
