@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Image as ImageIcon, Loader2, ZoomIn, ZoomOut, Eye, EyeOff } from "lucide-react";
 import { Button } from "./ui/button";
 import { Planogram } from "@/types/planogram";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ComplianceResult {
   is_compliant: boolean;
@@ -177,18 +178,33 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
     }
   };
 
-  const getStatusLabel = (cell: GridCell): string => {
+  const getStatusLabel = (cell: GridCell): { title: string; description: string } => {
     switch (cell.status) {
       case "compliant":
-        return `✓ Compliant: ${cell.expected}`;
+        return {
+          title: "✓ Compliant",
+          description: `Correct product: ${cell.expected}`,
+        };
       case "wrong_product":
-        return `✗ Wrong Product: Expected ${cell.expected}, Found ${cell.found}`;
+        return {
+          title: "✗ Wrong Product",
+          description: `Expected: ${cell.expected}\nFound: ${cell.found?.replace(/Found |where .* should be/, "")}`,
+        };
       case "undetected":
-        return `⚠ Undetected: Expected ${cell.expected}, Nothing found`;
+        return {
+          title: "⚠ Undetected",
+          description: `Missing product: ${cell.expected}\n${cell.found}`,
+        };
       case "no_product_expected":
-        return "Empty section";
+        return {
+          title: "Empty Section",
+          description: "No product expected in this section",
+        };
       default:
-        return "Unknown status";
+        return {
+          title: "Unknown Status",
+          description: "Status information not available",
+        };
     }
   };
 
@@ -265,26 +281,75 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
                   }}
                 >
                   {gridStatusMap.map((row, rowIndex) =>
-                    row.map((cell, colIndex) => (
-                      <div
-                        key={`${rowIndex}-${colIndex}`}
-                        className={`
-                          border-2 rounded-sm transition-all duration-200 hover:scale-105 cursor-pointer
-                          ${getCellColorClass(cell.status)}
-                        `}
-                        title={getStatusLabel(cell)}
-                        style={{
-                          gridRow: rowIndex + 1,
-                          gridColumn: colIndex + 1,
-                        }}
-                      >
-                        <div className="w-full h-full flex items-center justify-center text-white text-xs font-bold">
-                          {cell.status === "compliant" && "✓"}
-                          {cell.status === "wrong_product" && "✗"}
-                          {cell.status === "undetected" && "⚠"}
-                        </div>
-                      </div>
-                    ))
+                    row.map((cell, colIndex) => {
+                      const statusInfo = getStatusLabel(cell);
+                      return (
+                        <TooltipProvider key={`${rowIndex}-${colIndex}`}>
+                          <Tooltip delayDuration={0}>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={`
+                                  border-2 rounded-sm transition-all duration-200 hover:scale-105
+                                  ${getCellColorClass(cell.status)}
+                                  flex items-center justify-center
+                                `}
+                                style={{
+                                  gridRow: rowIndex + 1,
+                                  gridColumn: colIndex + 1,
+                                }}
+                              >
+                                <div className="w-full h-full flex items-center justify-center text-slate-700 font-bold relative">
+                                  {cell.status === "compliant" && <span className="text-2xl text-green-600">✓</span>}
+                                  {cell.status === "wrong_product" && <span className="text-2xl text-red-600">✗</span>}
+                                  {cell.status === "undetected" && <span className="text-2xl text-amber-600">⚠</span>}
+                                </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="right"
+                              className={`max-w-[300px] p-3 shadow-lg rounded-lg border ${
+                                cell.status === "compliant"
+                                  ? "bg-green-50 border-green-200"
+                                  : cell.status === "wrong_product"
+                                  ? "bg-red-50 border-red-200"
+                                  : cell.status === "undetected"
+                                  ? "bg-amber-50 border-amber-200"
+                                  : "bg-white border-gray-200"
+                              }`}
+                            >
+                              <div className="space-y-1">
+                                <p
+                                  className={`font-semibold ${
+                                    cell.status === "compliant"
+                                      ? "text-green-700"
+                                      : cell.status === "wrong_product"
+                                      ? "text-red-700"
+                                      : cell.status === "undetected"
+                                      ? "text-amber-700"
+                                      : "text-gray-700"
+                                  }`}
+                                >
+                                  {statusInfo.title}
+                                </p>
+                                <p
+                                  className={`text-sm ${
+                                    cell.status === "compliant"
+                                      ? "text-green-600"
+                                      : cell.status === "wrong_product"
+                                      ? "text-red-600"
+                                      : cell.status === "undetected"
+                                      ? "text-amber-600"
+                                      : "text-gray-600"
+                                  }`}
+                                >
+                                  {statusInfo.description}
+                                </p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })
                   )}
                 </div>
               )}
@@ -316,7 +381,12 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full">
-        <ImageCard image={originalImage} title="Original Image" badge="Input" isOriginal={true} />
+        <ImageCard
+          image={originalImage}
+          title={canShowCompliance ? "Image with Planogram Overlay" : "Original Image"}
+          badge="Input"
+          isOriginal={true}
+        />
 
         <ImageCard
           image={processedImage}
