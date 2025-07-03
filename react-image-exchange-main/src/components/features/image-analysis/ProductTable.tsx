@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import thresholds from "../data/thresholds.json";
+import thresholds from "@/data/thresholds.json";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,19 +22,21 @@ interface ProductTableProps {
   emptyShelfItems: string[];
 }
 
+const DEFAULT_THRESHOLD = 10;
+
 const handleOrder = (itemName: string) => {
   alert(`Order placed for ${itemName}`);
   // Optional: Add actual API call logic here.
 };
 
-const ProductTable: React.FC<ProductTableProps> = ({ detectedCounts, emptyShelfItems }) => {
+export const ProductTable: React.FC<ProductTableProps> = ({ detectedCounts, emptyShelfItems }) => {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     const items: Product[] = Object.entries(detectedCounts)
       .filter(([item]) => item.toLowerCase() !== "emptyspace")
       .map(([item, count]) => {
-        const threshold = thresholds[item] ?? 10;
+        const threshold = (thresholds as Record<string, number>)[item.toLowerCase()] ?? DEFAULT_THRESHOLD;
         return {
           item,
           count,
@@ -122,5 +124,3 @@ const ProductTable: React.FC<ProductTableProps> = ({ detectedCounts, emptyShelfI
     </div>
   );
 };
-
-export default ProductTable;

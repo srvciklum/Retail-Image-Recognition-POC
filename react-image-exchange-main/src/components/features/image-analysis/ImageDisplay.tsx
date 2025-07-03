@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Image as ImageIcon, Loader2, ZoomIn, ZoomOut, Eye, EyeOff } from "lucide-react";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { Planogram } from "@/types/planogram";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface ComplianceResult {
   is_compliant: boolean;
@@ -22,6 +23,15 @@ interface ComplianceResult {
   total_positions: number;
   planogram_name: string;
 }
+
+interface GridCell {
+  status: GridCellStatus;
+  expected?: string;
+  found?: string;
+  issueType?: string;
+}
+
+type GridCellStatus = "compliant" | "wrong_product" | "undetected" | "no_product_expected";
 
 interface ImageDisplayProps {
   originalImage: string;
@@ -47,15 +57,6 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   const toggleGridOverlay = () => setShowGridOverlay(!showGridOverlay);
 
   // Grid overlay logic (copied from ComplianceGridOverlay component)
-  type GridCellStatus = "compliant" | "wrong_product" | "undetected" | "no_product_expected";
-
-  interface GridCell {
-    status: GridCellStatus;
-    expected?: string;
-    found?: string;
-    issueType?: string;
-  }
-
   const calculateGridDimensions = (planogram: Planogram): { rows: number; cols: number } => {
     if (!planogram.shelves || planogram.shelves.length === 0) {
       return { rows: 1, cols: 1 };
