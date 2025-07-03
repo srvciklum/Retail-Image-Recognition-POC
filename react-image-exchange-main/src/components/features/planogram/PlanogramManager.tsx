@@ -25,7 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 import { cn } from "@/lib/utils";
 import { Product } from "@/types/product";
 import { productService } from "@/services/productService";
@@ -302,7 +302,7 @@ export const PlanogramManager: React.FC = () => {
     });
   };
 
-  const handleDragEnd = (result: any) => {
+  const handleDragEnd = (result: DropResult) => {
     if (!result.destination || !editingPlanogram) return;
 
     const { source, destination } = result;
@@ -621,6 +621,10 @@ export const PlanogramManager: React.FC = () => {
         });
       }
     }
+  };
+
+  const handleDragStart = (event: React.DragEvent<HTMLDivElement>, product: Product) => {
+    event.dataTransfer.setData("application/json", JSON.stringify(product));
   };
 
   return (

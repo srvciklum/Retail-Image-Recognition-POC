@@ -30,22 +30,20 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({ onIma
 
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-  useEffect(() => {
-    fetchPlanograms();
-  }, []);
-
-  const fetchPlanograms = async () => {
+  const fetchPlanograms = useCallback(async () => {
     try {
       const response = await fetch(`${apiBaseUrl}/planograms`);
-      if (response.ok) {
-        const data = await response.json();
-        setPlanograms(data);
-      }
+      if (!response.ok) throw new Error("Failed to fetch planograms");
+      const data = await response.json();
+      setPlanograms(data);
     } catch (error) {
       console.error("Error fetching planograms:", error);
-      setError("Failed to load planograms. Please try again later.");
     }
-  };
+  }, [apiBaseUrl]);
+
+  useEffect(() => {
+    fetchPlanograms();
+  }, [fetchPlanograms]);
 
   useImperativeHandle(ref, () => ({
     refreshPlanograms: fetchPlanograms,

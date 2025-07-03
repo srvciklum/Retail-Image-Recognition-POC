@@ -113,8 +113,8 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
       );
 
       // Handle individual position issues
-      let targetRow = issue.row;
-      let targetCol = issue.column;
+      const targetRow = Math.floor(issue.row);
+      const targetCol = Math.floor(issue.column);
 
       // Validate coordinates
       if (targetRow < 0 || targetCol < 0 || targetRow >= rows || targetCol >= cols) {
@@ -152,7 +152,12 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
     });
 
     // Debug: Print grid status summary
-    let statusCounts = { compliant: 0, wrong_product: 0, undetected: 0, no_product_expected: 0 };
+    const statusCounts = {
+      compliant: 0,
+      wrong_product: 0,
+      undetected: 0,
+      no_product_expected: 0,
+    };
     grid.forEach((row) => {
       row.forEach((cell) => {
         statusCounts[cell.status]++;
