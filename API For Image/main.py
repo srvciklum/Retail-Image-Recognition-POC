@@ -282,13 +282,44 @@ async def analyze_image(
 
     logger.debug(f"Saved input image to: {input_path}")
 
-    # Run YOLO on the image
-    results = model.predict(source=input_path, show=False, save=False, conf=0.1, line_width=2)
+    # Read original image
     image = cv2.imread(input_path)
-    height, width, _ = image.shape
+    if image is None:
+        raise HTTPException(status_code=400, detail="Invalid image file.")
+    
+    original_height, original_width, _ = image.shape
+    logger.debug(f"Original image dimensions: {original_width}x{original_height}")
 
-    # Get coordinate assignment function
-    assign_coordinates = detect_shelf_layout(input_path)
+    # Normalize image size while maintaining aspect ratio
+    TARGET_WIDTH = 600  # Standard width we'll use for processing
+    aspect_ratio = original_width / original_height
+    normalized_width = TARGET_WIDTH
+    normalized_height = int(TARGET_WIDTH / aspect_ratio)
+    
+    # Ensure height is reasonable (not too small or large)
+    MIN_HEIGHT = 400
+    MAX_HEIGHT = 1200
+    if normalized_height < MIN_HEIGHT:
+        normalized_height = MIN_HEIGHT
+        normalized_width = int(MIN_HEIGHT * aspect_ratio)
+    elif normalized_height > MAX_HEIGHT:
+        normalized_height = MAX_HEIGHT
+        normalized_width = int(MAX_HEIGHT * aspect_ratio)
+    
+    # Resize image to normalized dimensions
+    normalized_image = cv2.resize(image, (normalized_width, normalized_height), interpolation=cv2.INTER_AREA)
+    logger.debug(f"Normalized image dimensions: {normalized_width}x{normalized_height}")
+
+    # Save normalized image for debugging
+    normalized_path = os.path.join(OUTPUT_DIR, f"normalized_{image_id}.jpg")
+    cv2.imwrite(normalized_path, normalized_image)
+    logger.debug(f"Saved normalized image to: {normalized_path}")
+
+    # Run YOLO on the normalized image
+    results = model.predict(source=normalized_path, show=False, save=False, conf=0.1, line_width=2)
+
+    # Get coordinate assignment function based on normalized image
+    assign_coordinates = detect_shelf_layout(normalized_path)
 
     # Process detection results
     detected_products = []
@@ -298,10 +329,16 @@ async def analyze_image(
     names = model.names
     empty_shelf_boxes = []
 
+    # Scale factor to convert normalized coordinates back to original image size
+    scale_x = original_width / normalized_width
+    scale_y = original_height / normalized_height
+
     # Process each detected object
     for box in boxes:
         cls = int(box.cls[0])
         label = names[cls]
+        
+        # Get coordinates in normalized space
         row, column = assign_coordinates(box)
         
         logger.debug(f"Detected {label} at row {row}, column {column}")
@@ -325,8 +362,11 @@ async def analyze_image(
 
     # Process empty shelf areas
     for box, row, column in empty_shelf_boxes:
+        # Get coordinates in normalized space
         x1, y1, x2, y2 = map(int, box.xyxy[0])
-        roi = image[y2:min(y2 + 120, height), x1:x2]
+        
+        # Extract ROI from normalized image
+        roi = normalized_image[y2:min(y2 + 120, normalized_height), x1:x2]
         
         ocr_result = reader.readtext(roi)
         
@@ -350,8 +390,17 @@ async def analyze_image(
             })
 
     # Save processed image with overlays
+    # Draw on normalized image first
+    output_normalized_path = os.path.join(OUTPUT_DIR, f"output_normalized_{image_id}.jpg")
+    results[0].save(filename=output_normalized_path)
+    
+    # Read the output image and scale it back to original size
+    output_normalized = cv2.imread(output_normalized_path)
+    output_original = cv2.resize(output_normalized, (original_width, original_height), interpolation=cv2.INTER_LANCZOS4)
+    
+    # Save the final output at original size
     output_path = os.path.join(OUTPUT_DIR, f"output_{image_id}.jpg")
-    results[0].save(filename=output_path)
+    cv2.imwrite(output_path, output_original)
 
     # Check planogram compliance if planogram_id is provided
     compliance_result = None
@@ -376,7 +425,18 @@ async def analyze_image(
         "detected_counts": counts,
         "empty_shelf_items": [item["item"] for item in empty_shelf_items],
         "detected_products": detected_products,
-        "compliance_result": compliance_result.dict() if compliance_result else None
+        "compliance_result": compliance_result.dict() if compliance_result else None,
+        "debug_images": {
+            "normalized": f"images/normalized_{image_id}.jpg",
+            "output_normalized": f"images/output_normalized_{image_id}.jpg"
+        },
+        "image_info": {
+            "original_width": original_width,
+            "original_height": original_height,
+            "normalized_width": normalized_width,
+            "normalized_height": normalized_height,
+            "aspect_ratio": round(original_width / original_height, 2)
+        }
     }
     
     logger.debug(f"Sending response: {response_data}")
@@ -418,8 +478,35 @@ async def detect_grid(image: UploadFile = File(...)):
         if img is None:
             raise HTTPException(status_code=400, detail="Invalid image file.")
         
+        original_height, original_width, _ = img.shape
+        logger.debug(f"Original image dimensions: {original_width}x{original_height}")
+
+        # Normalize image size while maintaining aspect ratio
+        TARGET_WIDTH = 600  # Standard width we'll use for processing
+        aspect_ratio = original_width / original_height
+        normalized_width = TARGET_WIDTH
+        normalized_height = int(TARGET_WIDTH / aspect_ratio)
+        
+        # Ensure height is reasonable (not too small or large)
+        MIN_HEIGHT = 400
+        MAX_HEIGHT = 1200
+        if normalized_height < MIN_HEIGHT:
+            normalized_height = MIN_HEIGHT
+            normalized_width = int(MIN_HEIGHT * aspect_ratio)
+        elif normalized_height > MAX_HEIGHT:
+            normalized_height = MAX_HEIGHT
+            normalized_width = int(MAX_HEIGHT * aspect_ratio)
+        
+        # Resize image to normalized dimensions
+        img = cv2.resize(img, (normalized_width, normalized_height), interpolation=cv2.INTER_AREA)
+        logger.debug(f"Normalized image dimensions: {normalized_width}x{normalized_height}")
+
+        # Save normalized image for debugging
+        normalized_path = os.path.join(OUTPUT_DIR, f"normalized_{image_id}.jpg")
+        cv2.imwrite(normalized_path, img)
+        logger.debug(f"Saved normalized image to: {normalized_path}")
+
         height, width, _ = img.shape
-        logger.debug(f"Image dimensions: {width}x{height}")
 
         # Conservative shelf detection focused on retail environments
         def detect_grid_structure(image):
@@ -438,7 +525,7 @@ async def detect_grid(image: UploadFile = File(...)):
             logger.debug(f"Saved edge detection debug image to: {debug_path}")
             
             # Look for strong horizontal lines only (shelf separators)
-            # Use conservative kernel size
+            # Use conservative kernel size based on normalized dimensions
             h_kernel_size = max(20, width // 15)  # Conservative horizontal line detection
             horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (h_kernel_size, 1))
             horizontal_lines = cv2.morphologyEx(edges, cv2.MORPH_OPEN, horizontal_kernel)
@@ -458,7 +545,7 @@ async def detect_grid(image: UploadFile = File(...)):
                     logger.debug(f"Found strong horizontal line at y={y + h // 2}, width={w}, area={area}")
             
             # Look for vertical lines (product separators) with relaxed criteria
-            v_kernel_size = max(15, height // 20)  # Conservative vertical line detection
+            v_kernel_size = max(15, height // 20)
             vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, v_kernel_size))
             vertical_lines = cv2.morphologyEx(edges, cv2.MORPH_OPEN, vertical_kernel)
             
@@ -621,15 +708,24 @@ async def detect_grid(image: UploadFile = File(...)):
         logger.debug(f"Saved grid detection result to: {output_path}")
 
         # Calculate cell coordinates for overlay
+        # Scale the coordinates back to original image size
+        scale_x = original_width / width
+        scale_y = original_height / height
         cells = []
         for row in range(num_rows):
             for col in range(num_cols):
                 y1, y2 = h_lines[row], h_lines[row + 1]
                 x1, x2 = v_lines[col], v_lines[col + 1]
+                # Scale coordinates back to original image size
                 cells.append({
                     "row": row,
                     "column": col,
-                    "bbox": [int(x1), int(y1), int(x2), int(y2)]
+                    "bbox": [
+                        int(x1 * scale_x), 
+                        int(y1 * scale_y), 
+                        int(x2 * scale_x), 
+                        int(y2 * scale_y)
+                    ]
                 })
 
         response = {
@@ -640,13 +736,16 @@ async def detect_grid(image: UploadFile = File(...)):
             "cells": cells,
             "detection_image": f"images/grid_detection_{image_id}.jpg",
             "debug_images": {
+                "normalized": f"images/normalized_{image_id}.jpg",
                 "edges": f"images/debug_edges_{image_id}.jpg",
                 "lines": f"images/debug_lines_{image_id}.jpg"
             },
             "detection_method": detection_method,
             "image_info": {
-                "width": width,
-                "height": height,
+                "original_width": original_width,
+                "original_height": original_height,
+                "normalized_width": width,
+                "normalized_height": height,
                 "aspect_ratio": round(width / height, 2)
             },
             "success": True,
