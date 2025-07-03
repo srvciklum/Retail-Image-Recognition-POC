@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, Image as ImageIcon, FileImage, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,11 @@ interface ImageUploadProps {
   isLoading: boolean;
 }
 
-export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, isLoading }) => {
+export interface ImageUploadRef {
+  refreshPlanograms: () => void;
+}
+
+export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({ onImageUpload, isLoading }, ref) => {
   const [dragActive, setDragActive] = useState(false);
   const [planograms, setPlanograms] = useState<Planogram[]>([]);
   const [selectedPlanogramId, setSelectedPlanogramId] = useState<string>("none");
@@ -42,6 +46,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, isLoadi
       setError("Failed to load planograms. Please try again later.");
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    refreshPlanograms: fetchPlanograms,
+  }));
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -154,4 +162,6 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImageUpload, isLoadi
       </div>
     </div>
   );
-};
+});
+
+ImageUpload.displayName = "ImageUpload";

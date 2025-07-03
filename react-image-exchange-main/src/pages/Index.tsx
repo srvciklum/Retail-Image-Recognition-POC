@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ImageUpload } from "@/components/ImageUpload";
+import React, { useState, useRef, useEffect } from "react";
+import { ImageUpload, ImageUploadRef } from "@/components/ImageUpload";
 import { ImageDisplay } from "@/components/ImageDisplay";
 import { toast } from "sonner";
 import ProductTable from "../components/ProductTable";
@@ -10,6 +10,8 @@ import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PlanogramManager } from "@/components/PlanogramManager";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { planogramService } from "@/services/planogramService";
+import { Planogram } from "@/types/planogram";
 
 interface ComplianceResult {
   is_compliant: boolean;
@@ -37,8 +39,43 @@ const Index = () => {
   const [complianceResult, setComplianceResult] = useState<ComplianceResult | null>(null);
   const [activeAccordion, setActiveAccordion] = useState<string>("upload");
   const [showPlanogramDialog, setShowPlanogramDialog] = useState(false);
+  const [planogramData, setPlanogramData] = useState<Planogram | null>(null);
 
+  const imageUploadRef = useRef<ImageUploadRef>(null);
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+  // Refresh planograms when dialog closes
+  useEffect(() => {
+    if (!showPlanogramDialog && imageUploadRef.current) {
+      imageUploadRef.current.refreshPlanograms();
+    }
+  }, [showPlanogramDialog]);
+
+  // Fetch planogram data when compliance results arrive
+  useEffect(() => {
+    const fetchPlanogramData = async () => {
+      if (complianceResult && complianceResult.planogram_name) {
+        try {
+          const planograms = await planogramService.listPlanograms();
+          const matchingPlanogram = planograms.find((p) => p.name === complianceResult.planogram_name);
+          if (matchingPlanogram) {
+            setPlanogramData(matchingPlanogram);
+          } else {
+            console.warn("Could not find planogram with name:", complianceResult.planogram_name);
+            setPlanogramData(null);
+          }
+        } catch (error) {
+          console.error("Error fetching planogram data:", error);
+          toast.error("Failed to load planogram data for grid view");
+          setPlanogramData(null);
+        }
+      } else {
+        setPlanogramData(null);
+      }
+    };
+
+    fetchPlanogramData();
+  }, [complianceResult]);
 
   const handleImageUpload = async (file: File, planogramId?: string) => {
     setIsLoading(true);
@@ -48,6 +85,7 @@ const Index = () => {
     setDetectedCounts({});
     setEmptyShelfItems([]);
     setComplianceResult(null);
+    setPlanogramData(null);
     setActiveAccordion("");
 
     const formData = new FormData();
@@ -90,6 +128,7 @@ const Index = () => {
     setDetectedCounts({});
     setEmptyShelfItems([]);
     setComplianceResult(null);
+    setPlanogramData(null);
     setActiveAccordion("upload");
   };
 
@@ -155,7 +194,7 @@ const Index = () => {
                 <div className="p-6">
                   <Card className="border-2 border-dashed hover:border-blue-500/50 transition-colors">
                     <div className="p-6">
-                      <ImageUpload onImageUpload={handleImageUpload} isLoading={isLoading} />
+                      <ImageUpload ref={imageUploadRef} onImageUpload={handleImageUpload} isLoading={isLoading} />
                     </div>
                   </Card>
                 </div>
@@ -170,6 +209,8 @@ const Index = () => {
                     processedImage={processedImage}
                     responseText={responseText}
                     isLoading={isLoading}
+                    complianceResult={complianceResult}
+                    planogramData={planogramData}
                   />
                 </div>
 

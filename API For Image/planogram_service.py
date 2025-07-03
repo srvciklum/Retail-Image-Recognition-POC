@@ -304,7 +304,7 @@ class PlanogramService:
             result = ComplianceResult(
                 is_compliant=len(issues) == 0,
                 compliance_score=compliance_score,
-                issues=grouped_issues,
+                issues=issues,  # Use original individual position issues instead of grouped_issues
                 correct_placements=correct_placements,
                 total_positions=total_positions,
                 planogram_name=planogram.name

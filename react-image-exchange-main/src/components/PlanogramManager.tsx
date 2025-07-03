@@ -246,15 +246,9 @@ export const PlanogramManager: React.FC = () => {
       return false;
     }
 
-    const hasEmptySections = planogram.shelves.some((shelf) =>
-      shelf.sections.some((section) => !section.expected_product)
-    );
-
-    if (hasEmptySections) {
-      setError("All sections must have an assigned product");
-      return false;
-    }
-
+    // Removed the requirement for ALL sections to have products
+    // Users should be able to save planograms with empty sections
+    setError(null);
     return true;
   };
 
@@ -666,10 +660,20 @@ export const PlanogramManager: React.FC = () => {
                   <Input
                     id="planogramName"
                     value={planogramName}
-                    onChange={(e) => setPlanogramName(e.target.value)}
+                    onChange={(e) => {
+                      setPlanogramName(e.target.value);
+                      if (error && e.target.value.trim()) {
+                        setError(null); // Clear error when user starts typing a valid name
+                      }
+                    }}
                     placeholder="Enter planogram name"
                     className="bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary"
                   />
+                  {error && (
+                    <div className="text-sm text-destructive mt-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-md">
+                      {error}
+                    </div>
+                  )}
                 </div>
 
                 <div>
