@@ -284,16 +284,4 @@ npm run dev
 
 ---
 
-## 🤝 **Contributing**
-
-This POC demonstrates the potential of AI in retail operations. For enterprise deployment, integration support, or custom development, please contact the development team.
-
----
-
-## 📄 **License**
-
-This is a Proof of Concept developed for demonstration purposes. Commercial licensing available for enterprise deployments.
-
----
-
-**Transforming Retail Through AI Intelligence** | Built with ❤️ for the future of retail operations
+**Transforming Retail Through AI Intelligence**
