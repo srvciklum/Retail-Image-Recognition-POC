@@ -165,15 +165,15 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
   const getCellColorClass = (status: GridCellStatus): string => {
     switch (status) {
       case "compliant":
-        return "bg-green-500/60 border-green-600";
+        return "bg-green-400/30 border-green-500/50";
       case "wrong_product":
-        return "bg-red-500/60 border-red-600";
+        return "bg-red-400/30 border-red-500/50";
       case "undetected":
-        return "bg-orange-500/60 border-orange-600";
+        return "bg-amber-400/30 border-amber-500/50";
       case "no_product_expected":
-        return "bg-gray-300/40 border-gray-400";
+        return "bg-slate-200/30 border-slate-300/40";
       default:
-        return "bg-gray-300/40 border-gray-400";
+        return "bg-slate-200/30 border-slate-300/40";
     }
   };
 
