@@ -37,7 +37,7 @@ const Index = () => {
   const [detectedCounts, setDetectedCounts] = useState<Record<string, number>>({});
   const [emptyShelfItems, setEmptyShelfItems] = useState<string[]>([]);
   const [complianceResult, setComplianceResult] = useState<ComplianceResult | null>(null);
-  const [activeAccordion, setActiveAccordion] = useState<string>("upload");
+  const [activeAccordion, setActiveAccordion] = useState<string[]>(["upload"]);
   const [showPlanogramDialog, setShowPlanogramDialog] = useState(false);
   const [planogramData, setPlanogramData] = useState<Planogram | null>(null);
 
@@ -86,7 +86,7 @@ const Index = () => {
     setEmptyShelfItems([]);
     setComplianceResult(null);
     setPlanogramData(null);
-    setActiveAccordion("");
+    setActiveAccordion(["upload"]);
 
     const formData = new FormData();
     formData.append("image", file);
@@ -108,14 +108,23 @@ const Index = () => {
       setProcessedImage(`${apiBaseUrl}/${data.saved_image_path}`);
       setDetectedCounts(data.detected_counts);
       setEmptyShelfItems(data.empty_shelf_items);
+
+      // Set active accordion items based on available results
+      const activeItems = [];
       if (data.compliance_result) {
         setComplianceResult(data.compliance_result);
+        activeItems.push("compliance");
       }
+      if (data.detected_counts && Object.keys(data.detected_counts).length > 0) {
+        activeItems.push("detection");
+      }
+      setActiveAccordion(activeItems);
+
       toast.success("Image processed successfully");
     } catch (error) {
       console.error("Error processing image:", error);
       toast.error("Failed to process image");
-      setActiveAccordion("upload");
+      setActiveAccordion(["upload"]);
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +138,7 @@ const Index = () => {
     setEmptyShelfItems([]);
     setComplianceResult(null);
     setPlanogramData(null);
-    setActiveAccordion("upload");
+    setActiveAccordion(["upload"]);
   };
 
   return (
@@ -175,13 +184,7 @@ const Index = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-8">
-          <Accordion
-            type="single"
-            collapsible
-            value={activeAccordion}
-            onValueChange={setActiveAccordion}
-            className="space-y-4"
-          >
+          <Accordion type="multiple" value={activeAccordion} onValueChange={setActiveAccordion} className="space-y-4">
             <AccordionItem value="upload" className="border rounded-lg overflow-hidden">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
                 <div className="flex items-center gap-2">

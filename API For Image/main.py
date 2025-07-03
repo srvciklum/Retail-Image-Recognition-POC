@@ -282,32 +282,17 @@ async def analyze_image(
 
     logger.debug(f"Saved input image to: {input_path}")
 
-    # Read original image
-    image = cv2.imread(input_path)
+    # Read image with OpenCV
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if image is None:
         raise HTTPException(status_code=400, detail="Invalid image file.")
     
-    original_height, original_width, _ = image.shape
+    original_height, original_width = image.shape[:2]
     logger.debug(f"Original image dimensions: {original_width}x{original_height}")
 
-    # Normalize image size while maintaining aspect ratio
-    TARGET_WIDTH = 600  # Standard width we'll use for processing
-    aspect_ratio = original_width / original_height
-    normalized_width = TARGET_WIDTH
-    normalized_height = int(TARGET_WIDTH / aspect_ratio)
-    
-    # Ensure height is reasonable (not too small or large)
-    MIN_HEIGHT = 400
-    MAX_HEIGHT = 1200
-    if normalized_height < MIN_HEIGHT:
-        normalized_height = MIN_HEIGHT
-        normalized_width = int(MIN_HEIGHT * aspect_ratio)
-    elif normalized_height > MAX_HEIGHT:
-        normalized_height = MAX_HEIGHT
-        normalized_width = int(MAX_HEIGHT * aspect_ratio)
-    
-    # Resize image to normalized dimensions
-    normalized_image = cv2.resize(image, (normalized_width, normalized_height), interpolation=cv2.INTER_AREA)
+    # Use the new normalize_image function
+    normalized_image, normalized_width, normalized_height = normalize_image(image)
     logger.debug(f"Normalized image dimensions: {normalized_width}x{normalized_height}")
 
     # Save normalized image for debugging
@@ -442,6 +427,39 @@ async def analyze_image(
     logger.debug(f"Sending response: {response_data}")
     return response_data
 
+def normalize_image(image, target_width=600, buffer=50):
+    """
+    Normalize image size while maintaining aspect ratio.
+    Skip normalization if either dimension is within buffer range of target_width.
+    """
+    height, width = image.shape[:2]
+    
+    # Check if either dimension is already close to target size (within buffer)
+    if (abs(width - target_width) <= buffer) or (abs(height - target_width) <= buffer):
+        logger.debug(f"Skipping normalization as image dimension(s) {width}x{height} already near target {target_width}px (buffer: {buffer}px)")
+        return image.copy(), width, height
+    
+    # Calculate new dimensions
+    aspect_ratio = width / height
+    if width > height:
+        new_width = target_width
+        new_height = int(target_width / aspect_ratio)
+    else:
+        new_height = target_width
+        new_width = int(target_width * aspect_ratio)
+    
+    # Enforce minimum and maximum height constraints
+    min_height, max_height = 400, 1200
+    if new_height < min_height:
+        new_height = min_height
+        new_width = int(min_height * aspect_ratio)
+    elif new_height > max_height:
+        new_height = max_height
+        new_width = int(max_height * aspect_ratio)
+    
+    logger.debug(f"Normalizing image from {width}x{height} to {new_width}x{new_height}")
+    return cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA), new_width, new_height
+
 @app.post("/detect-grid")
 async def detect_grid(image: UploadFile = File(...)):
     """
@@ -460,53 +478,40 @@ async def detect_grid(image: UploadFile = File(...)):
         
         # Read and validate image data
         image_bytes = await image.read()
-        if len(image_bytes) == 0:
-            raise HTTPException(status_code=400, detail="Uploaded file is empty")
-        
+        if not image_bytes:
+            raise HTTPException(status_code=400, detail="Empty file")
+            
         logger.debug(f"Successfully read {len(image_bytes)} bytes from uploaded file")
         
-        # Save uploaded image with a unique filename
-        image_id = str(uuid.uuid4())
-        input_path = os.path.join(OUTPUT_DIR, f"grid_input_{image_id}.jpg")
+        # Generate unique ID for this detection
+        detection_id = str(uuid.uuid4())
+        
+        # Save input image for debugging
+        input_path = os.path.join(OUTPUT_DIR, f"grid_input_{detection_id}.jpg")
         with open(input_path, "wb") as f:
             f.write(image_bytes)
-
         logger.debug(f"Saved grid detection input image to: {input_path}")
-
-        # Read image
-        img = cv2.imread(input_path)
-        if img is None:
-            raise HTTPException(status_code=400, detail="Invalid image file.")
         
-        original_height, original_width, _ = img.shape
+        # Read image with OpenCV
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if image is None:
+            raise HTTPException(status_code=400, detail="Invalid image data")
+        
+        # Get original dimensions
+        original_height, original_width = image.shape[:2]
         logger.debug(f"Original image dimensions: {original_width}x{original_height}")
-
-        # Normalize image size while maintaining aspect ratio
-        TARGET_WIDTH = 600  # Standard width we'll use for processing
-        aspect_ratio = original_width / original_height
-        normalized_width = TARGET_WIDTH
-        normalized_height = int(TARGET_WIDTH / aspect_ratio)
         
-        # Ensure height is reasonable (not too small or large)
-        MIN_HEIGHT = 400
-        MAX_HEIGHT = 1200
-        if normalized_height < MIN_HEIGHT:
-            normalized_height = MIN_HEIGHT
-            normalized_width = int(MIN_HEIGHT * aspect_ratio)
-        elif normalized_height > MAX_HEIGHT:
-            normalized_height = MAX_HEIGHT
-            normalized_width = int(MAX_HEIGHT * aspect_ratio)
-        
-        # Resize image to normalized dimensions
-        img = cv2.resize(img, (normalized_width, normalized_height), interpolation=cv2.INTER_AREA)
+        # Normalize image size
+        normalized_image, normalized_width, normalized_height = normalize_image(image)
         logger.debug(f"Normalized image dimensions: {normalized_width}x{normalized_height}")
-
+        
         # Save normalized image for debugging
-        normalized_path = os.path.join(OUTPUT_DIR, f"normalized_{image_id}.jpg")
-        cv2.imwrite(normalized_path, img)
+        normalized_path = os.path.join(OUTPUT_DIR, f"normalized_{detection_id}.jpg")
+        cv2.imwrite(normalized_path, normalized_image)
         logger.debug(f"Saved normalized image to: {normalized_path}")
 
-        height, width, _ = img.shape
+        height, width, _ = normalized_image.shape
 
         # Conservative shelf detection focused on retail environments
         def detect_grid_structure(image):
@@ -520,7 +525,7 @@ async def detect_grid(image: UploadFile = File(...)):
             edges = cv2.Canny(blurred, 50, 150)
             
             # Save debug image
-            debug_path = os.path.join(OUTPUT_DIR, f"debug_edges_{image_id}.jpg")
+            debug_path = os.path.join(OUTPUT_DIR, f"debug_edges_{detection_id}.jpg")
             cv2.imwrite(debug_path, edges)
             logger.debug(f"Saved edge detection debug image to: {debug_path}")
             
@@ -613,7 +618,7 @@ async def detect_grid(image: UploadFile = File(...)):
         # Try intelligent grid detection first
         detection_method = "computer_vision"
         try:
-            num_rows, num_cols, h_lines, v_lines = detect_grid_structure(img)
+            num_rows, num_cols, h_lines, v_lines = detect_grid_structure(normalized_image)
             logger.debug(f"Computer vision detection result: {num_rows} rows, {num_cols} columns")
             
             # Validate the detection results with reasonable bounds
@@ -654,7 +659,7 @@ async def detect_grid(image: UploadFile = File(...)):
             v_lines = [int(i * width / num_cols) for i in range(num_cols + 1)]
 
         # Create debug visualization showing detected lines
-        debug_lines_img = img.copy()
+        debug_lines_img = normalized_image.copy()
         
         # Draw detected grid lines in different colors
         for i, y in enumerate(h_lines):
@@ -670,12 +675,12 @@ async def detect_grid(image: UploadFile = File(...)):
             cv2.putText(debug_lines_img, f"V{i}", (x+5, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
         
         # Save debug image
-        debug_lines_path = os.path.join(OUTPUT_DIR, f"debug_lines_{image_id}.jpg")
+        debug_lines_path = os.path.join(OUTPUT_DIR, f"debug_lines_{detection_id}.jpg")
         cv2.imwrite(debug_lines_path, debug_lines_img)
         logger.debug(f"Saved line detection debug image to: {debug_lines_path}")
         
         # Create final visualization with detected grid
-        grid_img = img.copy()
+        grid_img = normalized_image.copy()
         
         # Draw final grid lines in green
         for y in h_lines:
@@ -703,7 +708,7 @@ async def detect_grid(image: UploadFile = File(...)):
                            cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0, 0, 0), 1)
 
         # Save the grid detection result
-        output_path = os.path.join(OUTPUT_DIR, f"grid_detection_{image_id}.jpg")
+        output_path = os.path.join(OUTPUT_DIR, f"grid_detection_{detection_id}.jpg")
         cv2.imwrite(output_path, grid_img)
         logger.debug(f"Saved grid detection result to: {output_path}")
 
@@ -734,11 +739,11 @@ async def detect_grid(image: UploadFile = File(...)):
                 "columns": num_cols
             },
             "cells": cells,
-            "detection_image": f"images/grid_detection_{image_id}.jpg",
+            "detection_image": f"images/grid_detection_{detection_id}.jpg",
             "debug_images": {
-                "normalized": f"images/normalized_{image_id}.jpg",
-                "edges": f"images/debug_edges_{image_id}.jpg",
-                "lines": f"images/debug_lines_{image_id}.jpg"
+                "normalized": f"images/normalized_{detection_id}.jpg",
+                "edges": f"images/debug_edges_{detection_id}.jpg",
+                "lines": f"images/debug_lines_{detection_id}.jpg"
             },
             "detection_method": detection_method,
             "image_info": {
