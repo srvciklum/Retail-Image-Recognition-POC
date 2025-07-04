@@ -1,10 +1,9 @@
 import { Product } from "@/types/product";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { API_CONFIG } from "@/config/api";
 
 export const productService = {
   async listProducts(): Promise<Product[]> {
-    const response = await fetch(`${API_BASE_URL}/products`);
+    const response = await fetch(API_CONFIG.getFullUrl("/products"));
     if (!response.ok) {
       throw new Error("Failed to fetch products");
     }
@@ -12,7 +11,7 @@ export const productService = {
   },
 
   async getProduct(id: string): Promise<Product> {
-    const response = await fetch(`${API_BASE_URL}/products/${id}`);
+    const response = await fetch(API_CONFIG.getFullUrl(`/products/${id}`));
     if (!response.ok) {
       throw new Error("Failed to fetch product");
     }
@@ -20,7 +19,7 @@ export const productService = {
   },
 
   async createProduct(product: Omit<Product, "id">): Promise<Product> {
-    const response = await fetch(`${API_BASE_URL}/products`, {
+    const response = await fetch(API_CONFIG.getFullUrl("/products"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -34,7 +33,7 @@ export const productService = {
   },
 
   async updateProduct(product: Product): Promise<Product> {
-    const response = await fetch(`${API_BASE_URL}/products/${product.id}`, {
+    const response = await fetch(API_CONFIG.getFullUrl(`/products/${product.id}`), {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -48,7 +47,7 @@ export const productService = {
   },
 
   async deleteProduct(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/products/${id}`, {
+    const response = await fetch(API_CONFIG.getFullUrl(`/products/${id}`), {
       method: "DELETE",
     });
     if (!response.ok) {
@@ -57,7 +56,7 @@ export const productService = {
   },
 
   async searchProducts(query: string): Promise<Product[]> {
-    const response = await fetch(`${API_BASE_URL}/products/search/${encodeURIComponent(query)}`);
+    const response = await fetch(API_CONFIG.getFullUrl(`/products/search/${encodeURIComponent(query)}`));
     if (!response.ok) {
       throw new Error("Failed to search products");
     }

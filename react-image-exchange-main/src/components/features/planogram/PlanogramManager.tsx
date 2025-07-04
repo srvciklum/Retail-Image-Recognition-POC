@@ -31,6 +31,7 @@ import { Product } from "@/types/product";
 import { productService } from "@/services/productService";
 import { planogramService } from "@/services/planogramService";
 import { Planogram, PlanogramCreate, PlanogramSection, PlanogramShelf } from "@/types/planogram";
+import { API_CONFIG } from "@/config/api";
 
 export const PlanogramManager: React.FC = () => {
   const [planograms, setPlanograms] = useState<Planogram[]>([]);
@@ -150,6 +151,7 @@ export const PlanogramManager: React.FC = () => {
 
   const detectGrid = async (file: File) => {
     setIsDetectingGrid(true);
+    setGridDetected(false);
 
     try {
       console.log("Starting grid detection for file:", file.name, "size:", file.size, "type:", file.type);
@@ -157,7 +159,7 @@ export const PlanogramManager: React.FC = () => {
       const formData = new FormData();
       formData.append("image", file);
 
-      const response = await fetch(`${apiBaseUrl}/detect-grid`, {
+      const response = await fetch(API_CONFIG.getFullUrl("/detect-grid"), {
         method: "POST",
         body: formData,
       });
@@ -165,45 +167,61 @@ export const PlanogramManager: React.FC = () => {
       console.log("Grid detection response status:", response.status);
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Grid detection failed:", response.status, errorText);
-        throw new Error(`Failed to detect grid: ${response.status} ${errorText}`);
+        let errorMessage = "Failed to detect grid";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch {
+          // If response is not JSON, try to get text
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
       console.log("Grid detection result:", result);
 
-      if (result.grid_dimensions) {
-        const { rows, columns } = result.grid_dimensions;
-        setGridSize({ rows, columns });
-
-        // Update the planogram with detected grid size
-        if (editingPlanogram) {
-          const newShelves = Array.from({ length: rows }, (_, row) => ({
-            row,
-            sections: Array.from({ length: columns }, (_, column) => ({
-              column,
-              expected_product: "",
-              allowed_variants: [],
-              min_quantity: 1,
-              max_quantity: 1,
-            })),
-          }));
-
-          setEditingPlanogram({
-            ...editingPlanogram,
-            shelves: newShelves,
-          });
-        }
-
-        setGridDetected(true);
-        toast.success(`Grid detected: ${rows} rows × ${columns} columns`);
-      } else {
-        toast.error("Could not detect grid in the image");
+      if (!result.grid_dimensions) {
+        throw new Error("No grid dimensions detected in the image");
       }
+
+      const { rows, columns } = result.grid_dimensions;
+      if (!rows || !columns || rows < 1 || columns < 1) {
+        throw new Error("Invalid grid dimensions detected");
+      }
+
+      setGridSize({ rows, columns });
+
+      // Update the planogram with detected grid size
+      if (editingPlanogram) {
+        const newShelves = Array.from({ length: rows }, (_, row) => ({
+          row,
+          sections: Array.from({ length: columns }, (_, column) => ({
+            column,
+            expected_product: "",
+            allowed_variants: [],
+            min_quantity: 1,
+            max_quantity: 1,
+          })),
+        }));
+
+        setEditingPlanogram({
+          ...editingPlanogram,
+          shelves: newShelves,
+        });
+      }
+
+      setGridDetected(true);
+      toast.success(`Grid detected: ${rows} rows × ${columns} columns`);
     } catch (error) {
-      console.error("Error detecting grid:", error);
-      toast.error("Failed to detect grid. Please try again.");
+      console.error("Grid detection error:", error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to detect grid in the image");
+      }
+      setGridDetected(false);
     } finally {
       setIsDetectingGrid(false);
     }
@@ -253,36 +271,38 @@ export const PlanogramManager: React.FC = () => {
   };
 
   const handleSavePlanogram = async () => {
-    if (!editingPlanogram) return;
-
-    const planogramData: PlanogramCreate = {
-      name: planogramName,
-      shelves: editingPlanogram.shelves,
-    };
-
-    if (!validatePlanogram(planogramData)) {
-      setActiveTab("layout");
-      return;
-    }
-
     try {
+      if (!editingPlanogram) return;
+
+      if (!validatePlanogram(editingPlanogram)) {
+        return;
+      }
+
+      const planogramData: PlanogramCreate = {
+        name: planogramName || editingPlanogram.name,
+        shelves: editingPlanogram.shelves,
+      };
+
+      let savedPlanogram;
       if ("id" in editingPlanogram) {
-        // Update existing planogram
-        await planogramService.updatePlanogram(editingPlanogram.id, planogramData);
+        savedPlanogram = await planogramService.updatePlanogram(editingPlanogram.id, planogramData);
+        toast.success("Planogram updated successfully");
       } else {
-        // Create new planogram
-        await planogramService.createPlanogram(planogramData);
+        savedPlanogram = await planogramService.createPlanogram(planogramData);
+        toast.success("Planogram created successfully");
       }
 
       await fetchPlanograms();
       setIsDialogOpen(false);
       setEditingPlanogram(null);
-      setError(null);
-      handleRemoveImage(); // Clean up image state
-      toast.success("Planogram saved successfully");
+      setPlanogramName("");
     } catch (error) {
       console.error("Error saving planogram:", error);
-      toast.error("Failed to save planogram");
+      if (error instanceof Error) {
+        toast.error(`Failed to save planogram: ${error.message}`);
+      } else {
+        toast.error("Failed to save planogram. Please check the data and try again.");
+      }
     }
   };
 

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { planogramService } from "@/services/planogramService";
 import { Planogram } from "@/types/planogram";
 import { ComplianceResult } from "@/types/planogram";
+import { API_CONFIG } from "@/config/api";
 
 interface ImageAnalysisProps {
   apiBaseUrl: string;
@@ -72,7 +73,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ apiBaseUrl }) => {
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/analyze`, {
+      const response = await fetch(API_CONFIG.getFullUrl("/analyze"), {
         method: "POST",
         body: formData,
       });
@@ -82,7 +83,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ apiBaseUrl }) => {
       }
 
       const data = await response.json();
-      setProcessedImage(`${apiBaseUrl}/${data.saved_image_path}`);
+      setProcessedImage(`${API_CONFIG.baseUrl}/api/v1/images/${data.saved_image_path.split("/").pop()}`);
       setDetectedCounts(data.detected_counts);
       setEmptyShelfItems(data.empty_shelf_items);
 

@@ -60,7 +60,7 @@ coverage/
 *.sublime-workspace
 *.sublime-project
 
-# Project specific
+# Project specific - Old API
 API For Image/saved_images/*
 !API For Image/saved_images/.gitkeep
 API For Image/uploads/*
@@ -72,6 +72,15 @@ API For Image/runs/detect/predict*/
 *.mlmodel
 *.torchscript
 *.engine
+
+# Project specific - New API
+image-recognition-api/saved_images/*
+!image-recognition-api/saved_images/.gitkeep
+image-recognition-api/uploads/*
+!image-recognition-api/uploads/.gitkeep
+image-recognition-api/runs/detect/predict*/
+image-recognition-api/runs/detect/predict*/crops/
+image-recognition-api/runs/detect/predict*/labels/
 
 # Logs
 logs/
