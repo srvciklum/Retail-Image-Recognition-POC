@@ -22,9 +22,25 @@ async def create_product(product: ProductCreate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/products", response_model=List[Product])
+async def list_products():
+    try:
+        return product_service.list_products()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/products/search/{query}", response_model=List[Product])
 async def search_products(query: str):
     return product_service.search_products(query)
+
+@router.delete("/products/{product_id}")
+async def delete_product(product_id: str):
+    try:
+        if not product_service.delete_product(product_id):
+            raise HTTPException(status_code=404, detail="Product not found")
+        return {"message": "Product deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Planogram management endpoints
 @router.post("/planograms", response_model=Planogram)
@@ -44,6 +60,16 @@ async def get_planogram(planogram_id: str):
 @router.get("/planograms", response_model=List[Planogram])
 async def list_planograms():
     return planogram_service.list_planograms()
+
+@router.put("/planograms/{planogram_id}", response_model=Planogram)
+async def update_planogram(planogram_id: str, planogram: PlanogramCreate):
+    try:
+        updated = planogram_service.update_planogram(planogram_id, planogram)
+        if not updated:
+            raise HTTPException(status_code=404, detail="Planogram not found")
+        return updated
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/planograms/{planogram_id}")
 async def delete_planogram(planogram_id: str):

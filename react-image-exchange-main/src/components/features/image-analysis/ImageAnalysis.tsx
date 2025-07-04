@@ -29,6 +29,27 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ apiBaseUrl }) => {
 
   const imageUploadRef = useRef<ImageUploadRef>(null);
 
+  // Refresh planograms when component mounts and when dialog closes
+  useEffect(() => {
+    const refreshPlanograms = () => {
+      if (imageUploadRef.current) {
+        imageUploadRef.current.refreshPlanograms();
+      }
+    };
+
+    // Listen for dialog close events
+    const handleDialogClose = () => {
+      refreshPlanograms();
+    };
+
+    window.addEventListener("planogram-dialog-close", handleDialogClose);
+    refreshPlanograms(); // Initial load
+
+    return () => {
+      window.removeEventListener("planogram-dialog-close", handleDialogClose);
+    };
+  }, []);
+
   // Fetch planogram data when compliance results arrive
   useEffect(() => {
     const fetchPlanogramData = async () => {

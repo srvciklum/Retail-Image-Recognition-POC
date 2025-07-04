@@ -79,6 +79,32 @@ class PlanogramService:
             logger.error(f"Error deleting planogram: {e}")
             return False
 
+    def update_planogram(self, planogram_id: str, planogram: PlanogramCreate) -> Optional[Planogram]:
+        """Update an existing planogram"""
+        try:
+            path = self._get_storage_path(planogram_id)
+            if not os.path.exists(path):
+                return None
+
+            # Read existing planogram to preserve created_at
+            with open(path, 'r') as f:
+                existing_data = json.load(f)
+
+            # Update planogram data
+            planogram_data = planogram.dict()
+            planogram_data["id"] = planogram_id
+            planogram_data["created_at"] = existing_data["created_at"]
+            planogram_data["updated_at"] = datetime.utcnow().isoformat()
+
+            # Save updated planogram
+            with open(path, 'w') as f:
+                json.dump(planogram_data, f, indent=2)
+
+            return Planogram(**planogram_data)
+        except Exception as e:
+            logger.error(f"Error updating planogram: {e}")
+            return None
+
     def check_compliance(self, planogram: Planogram, detected_products: List[Dict[str, Any]]) -> ComplianceResult:
         """Check compliance of detected products against planogram"""
         logger.debug(f"Starting compliance check for planogram {planogram.name}")

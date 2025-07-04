@@ -537,8 +537,10 @@ class ImageService:
         rows = len(h_lines) - 1
         cols = len(v_lines) - 1
         
-        if rows > 6:
-            raise ValueError("Too many rows detected, likely false positives")
+        if (rows > 6 or cols > 8 or rows < 1 or cols < 1 or 
+            (rows == 1 and cols <= 2) or
+            (cols == 1 and rows <= 2)):
+            raise ValueError("Grid detection failed validation")
         
         return rows, cols, h_lines, v_lines
 

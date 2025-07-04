@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 class ProductService:
     def __init__(self):
-        self.storage_dir = "products"
+        # Use path relative to project root
+        self.storage_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "products")
         os.makedirs(self.storage_dir, exist_ok=True)
         self._load_default_products()
 
@@ -21,9 +22,27 @@ class ProductService:
         default_file = os.path.join(self.storage_dir, "default_products.json")
         if not os.path.exists(default_file):
             default_products = [
-                {"name": "Coca-Cola", "category": "Beverages", "brand": "Coca-Cola"},
-                {"name": "Sprite", "category": "Beverages", "brand": "Coca-Cola"},
-                {"name": "Fanta", "category": "Beverages", "brand": "Coca-Cola"}
+                {
+                    "name": "Coca-Cola",
+                    "category": "Beverages",
+                    "brand": "Coca-Cola",
+                    "variants": ["original", "zero", "light"],
+                    "description": "Coca-Cola carbonated soft drink"
+                },
+                {
+                    "name": "Sprite",
+                    "category": "Beverages",
+                    "brand": "Coca-Cola",
+                    "variants": ["original", "zero"],
+                    "description": "Sprite lemon-lime soft drink"
+                },
+                {
+                    "name": "Fanta",
+                    "category": "Beverages",
+                    "brand": "Coca-Cola",
+                    "variants": ["orange", "grape"],
+                    "description": "Fanta fruit-flavored soft drink"
+                }
             ]
             for product in default_products:
                 self.create_product(ProductCreate(**product))
@@ -31,7 +50,11 @@ class ProductService:
     def create_product(self, product: ProductCreate) -> Product:
         """Create a new product"""
         try:
-            product_id = str(uuid.uuid4())
+            # Generate a URL-friendly ID from the product name
+            product_id = product.name.lower().replace(" ", "-")
+            # Add a unique suffix to avoid conflicts
+            product_id = f"{product_id}-{str(uuid.uuid4())[:8]}"
+            
             product_data = product.dict()
             product_data["id"] = product_id
             
