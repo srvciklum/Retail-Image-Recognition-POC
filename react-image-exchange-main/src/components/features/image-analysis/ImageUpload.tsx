@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { API_CONFIG } from "@/config/api";
 
 interface Planogram {
   id: string;
@@ -27,22 +28,35 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({ onIma
   const [planograms, setPlanograms] = useState<Planogram[]>([]);
   const [selectedPlanogramId, setSelectedPlanogramId] = useState<string>("none");
   const [error, setError] = useState<string | null>(null);
-
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const [isLoadingPlanograms, setIsLoadingPlanograms] = useState(false);
 
   const fetchPlanograms = useCallback(async () => {
+    setIsLoadingPlanograms(true);
     try {
-      const response = await fetch(`${apiBaseUrl}/planograms`);
+      const response = await fetch(API_CONFIG.getFullUrl("/planograms"));
       if (!response.ok) throw new Error("Failed to fetch planograms");
       const data = await response.json();
       setPlanograms(data);
     } catch (error) {
       console.error("Error fetching planograms:", error);
+    } finally {
+      setIsLoadingPlanograms(false);
     }
-  }, [apiBaseUrl]);
+  }, []);
 
   useEffect(() => {
     fetchPlanograms();
+
+    // Listen for planogram updates
+    const handlePlanogramUpdate = () => {
+      fetchPlanograms();
+    };
+
+    window.addEventListener("planogram-dialog-close", handlePlanogramUpdate);
+
+    return () => {
+      window.removeEventListener("planogram-dialog-close", handlePlanogramUpdate);
+    };
   }, [fetchPlanograms]);
 
   useImperativeHandle(ref, () => ({

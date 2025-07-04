@@ -194,22 +194,24 @@ export const ImageDisplay: React.FC<ImageDisplayProps> = ({
       case "wrong_product":
         return {
           title: "✗ Wrong Product",
-          description: `Expected: ${cell.expected}\nFound: ${cell.found?.replace(/Found |where .* should be/, "")}`,
+          description: `Expected: ${cell.expected}
+Found: ${cell.found?.replace(/Found |where .* should be/, "").trim()}`,
         };
       case "undetected":
         return {
           title: "⚠ Undetected",
-          description: `Missing product: ${cell.expected}\n${cell.found}`,
+          description: `Expected: ${cell.expected}
+Found: ${cell.found}`,
         };
       case "no_product_expected":
         return {
-          title: "Empty Section",
-          description: "No product expected in this section",
+          title: "Empty Space",
+          description: "No product expected in this position",
         };
       default:
         return {
           title: "Unknown Status",
-          description: "Status information not available",
+          description: "Status not recognized",
         };
     }
   };

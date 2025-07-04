@@ -1,35 +1,26 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-import logging
-from .api.v1.endpoints import router as api_router
-from .config.settings import settings
+import os
+from .api.v1.endpoints import router as api_v1_router
 
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# Set up output directory for saved images
+OUTPUT_DIR = "saved_images"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
-)
+app = FastAPI(title="Image Recognition API")
 
-# Configure CORS
+# Allow React frontend to access this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=["*"],  # or specify ["http://localhost:3000"] for security
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Mount static files
-app.mount("/images", StaticFiles(directory=settings.OUTPUT_DIR), name="images")
+# Include API routes first
+app.include_router(api_v1_router, prefix="/api/v1")
 
-# Include API router
-app.include_router(api_router, prefix=settings.API_V1_STR)
-
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"} 
+# Serve saved images as static files under the API prefix
+app.mount("/api/v1/images", StaticFiles(directory=OUTPUT_DIR), name="images") 

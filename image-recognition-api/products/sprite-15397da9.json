@@ -1,10 +1,9 @@
 {
   "id": "sprite-15397da9",
   "name": "sprite",
-  "variants": [
-    "original"
-  ],
+  "variants": ["original"],
   "image_url": null,
   "category": "Beverages",
-  "description": null
+  "description": null,
+  "brand": "Coca-Cola"
 }

@@ -1,10 +1,9 @@
 import { Planogram, PlanogramCreate } from "@/types/planogram";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { API_CONFIG } from "@/config/api";
 
 export const planogramService = {
   async listPlanograms(): Promise<Planogram[]> {
-    const response = await fetch(`${API_BASE_URL}/planograms`);
+    const response = await fetch(API_CONFIG.getFullUrl("/planograms"));
     if (!response.ok) {
       throw new Error("Failed to fetch planograms");
     }
@@ -12,7 +11,7 @@ export const planogramService = {
   },
 
   async getPlanogram(id: string): Promise<Planogram> {
-    const response = await fetch(`${API_BASE_URL}/planograms/${id}`);
+    const response = await fetch(API_CONFIG.getFullUrl(`/planograms/${id}`));
     if (!response.ok) {
       throw new Error("Failed to fetch planogram");
     }
@@ -20,7 +19,7 @@ export const planogramService = {
   },
 
   async createPlanogram(planogram: PlanogramCreate): Promise<Planogram> {
-    const response = await fetch(`${API_BASE_URL}/planograms`, {
+    const response = await fetch(API_CONFIG.getFullUrl("/planograms"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -34,7 +33,7 @@ export const planogramService = {
   },
 
   async updatePlanogram(id: string, planogram: PlanogramCreate): Promise<Planogram> {
-    const response = await fetch(`${API_BASE_URL}/planograms/${id}`, {
+    const response = await fetch(API_CONFIG.getFullUrl(`/planograms/${id}`), {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -48,7 +47,7 @@ export const planogramService = {
   },
 
   async deletePlanogram(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/planograms/${id}`, {
+    const response = await fetch(API_CONFIG.getFullUrl(`/planograms/${id}`), {
       method: "DELETE",
     });
     if (!response.ok) {

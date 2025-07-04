@@ -1,6 +1,6 @@
 {
   "id": "1396bedf-6bf3-4cb5-9d95-c2831c88c913",
-  "name": "test-new-grid-planogram",
+  "name": "Test-Sample-Planogram",
   "shelves": [
     {
       "row": 0,
@@ -8,45 +8,35 @@
         {
           "column": 0,
           "expected_product": "Coca-Cola",
-          "allowed_variants": [
-            "Original"
-          ],
+          "allowed_variants": ["Original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 1,
           "expected_product": "Coca-Cola",
-          "allowed_variants": [
-            "Original"
-          ],
+          "allowed_variants": ["Original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 2,
           "expected_product": "sprite",
-          "allowed_variants": [
-            "original"
-          ],
+          "allowed_variants": ["original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 3,
           "expected_product": "sprite",
-          "allowed_variants": [
-            "original"
-          ],
+          "allowed_variants": ["original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 4,
           "expected_product": "sprite",
-          "allowed_variants": [
-            "original"
-          ],
+          "allowed_variants": ["original"],
           "min_quantity": 1,
           "max_quantity": 1
         }
@@ -58,45 +48,35 @@
         {
           "column": 0,
           "expected_product": "Coca-Cola",
-          "allowed_variants": [
-            "Original"
-          ],
+          "allowed_variants": ["Original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 1,
           "expected_product": "Coca-Cola",
-          "allowed_variants": [
-            "Original"
-          ],
+          "allowed_variants": ["Original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 2,
           "expected_product": "sprite",
-          "allowed_variants": [
-            "original"
-          ],
+          "allowed_variants": ["original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 3,
           "expected_product": "sprite",
-          "allowed_variants": [
-            "original"
-          ],
+          "allowed_variants": ["original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 4,
           "expected_product": "sprite",
-          "allowed_variants": [
-            "original"
-          ],
+          "allowed_variants": ["original"],
           "min_quantity": 1,
           "max_quantity": 1
         }
@@ -108,45 +88,35 @@
         {
           "column": 0,
           "expected_product": "Coca-Cola",
-          "allowed_variants": [
-            "Original"
-          ],
+          "allowed_variants": ["Original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 1,
           "expected_product": "Coca-Cola",
-          "allowed_variants": [
-            "Original"
-          ],
+          "allowed_variants": ["Original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 2,
           "expected_product": "Coca-Cola",
-          "allowed_variants": [
-            "Original"
-          ],
+          "allowed_variants": ["Original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 3,
           "expected_product": "Coca-Cola",
-          "allowed_variants": [
-            "Original"
-          ],
+          "allowed_variants": ["Original"],
           "min_quantity": 1,
           "max_quantity": 1
         },
         {
           "column": 4,
           "expected_product": "Coca-Cola",
-          "allowed_variants": [
-            "Original"
-          ],
+          "allowed_variants": ["Original"],
           "min_quantity": 1,
           "max_quantity": 1
         }

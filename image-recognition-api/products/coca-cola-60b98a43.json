@@ -1,10 +1,9 @@
 {
   "id": "coca-cola-60b98a43",
-  "name": "Coca-Cola",
-  "variants": [
-    "Original"
-  ],
+  "name": "coca-cola",
+  "variants": ["original"],
   "image_url": null,
   "category": "Beverages",
-  "description": null
+  "description": null,
+  "brand": "Coca-Cola"
 }
