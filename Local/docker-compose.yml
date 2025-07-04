@@ -1,14 +1,14 @@
-version: '3.8'
+version: "3.8"
 
 services:
   fastapi-api:
     build:
-      context: ./API For Image
+      context: ./image-recognition-api
     container_name: fastapi-api
     ports:
       - "8000:8000"
     volumes:
-      - ./API For Image/saved_images:/app/saved_images
+      - ./image-recognition-api/saved_images:/app/saved_images
 
   react-frontend:
     build:
