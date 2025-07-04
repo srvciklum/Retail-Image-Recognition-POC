@@ -28,8 +28,10 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({ onIma
   const [planograms, setPlanograms] = useState<Planogram[]>([]);
   const [selectedPlanogramId, setSelectedPlanogramId] = useState<string>("none");
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingPlanograms, setIsLoadingPlanograms] = useState(false);
 
   const fetchPlanograms = useCallback(async () => {
+    setIsLoadingPlanograms(true);
     try {
       const response = await fetch(API_CONFIG.getFullUrl("/planograms"));
       if (!response.ok) throw new Error("Failed to fetch planograms");
@@ -37,11 +39,24 @@ export const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(({ onIma
       setPlanograms(data);
     } catch (error) {
       console.error("Error fetching planograms:", error);
+    } finally {
+      setIsLoadingPlanograms(false);
     }
   }, []);
 
   useEffect(() => {
     fetchPlanograms();
+
+    // Listen for planogram updates
+    const handlePlanogramUpdate = () => {
+      fetchPlanograms();
+    };
+
+    window.addEventListener("planogram-dialog-close", handlePlanogramUpdate);
+
+    return () => {
+      window.removeEventListener("planogram-dialog-close", handlePlanogramUpdate);
+    };
   }, [fetchPlanograms]);
 
   useImperativeHandle(ref, () => ({

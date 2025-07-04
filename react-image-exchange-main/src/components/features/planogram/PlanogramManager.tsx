@@ -68,6 +68,8 @@ export const PlanogramManager: React.FC = () => {
   const [isDetectingGrid, setIsDetectingGrid] = useState(false);
   const [gridDetected, setGridDetected] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -264,18 +266,23 @@ export const PlanogramManager: React.FC = () => {
   };
 
   const handleDeletePlanogram = async (id: string) => {
+    setIsDeleting(true);
     try {
       await planogramService.deletePlanogram(id);
       const updatedPlanograms = await planogramService.listPlanograms();
       setPlanograms(updatedPlanograms);
+      window.dispatchEvent(new Event("planogram-dialog-close"));
       toast.success("Planogram deleted successfully");
     } catch (error) {
       console.error("Error deleting planogram:", error);
       toast.error("Failed to delete planogram");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleSavePlanogram = async () => {
+    setIsSaving(true);
     try {
       if (!editingPlanogram) return;
 
@@ -283,6 +290,7 @@ export const PlanogramManager: React.FC = () => {
       const name = planogramName.trim();
       if (!name) {
         setError("Please enter a planogram name");
+        setIsSaving(false);
         return;
       }
 
@@ -291,15 +299,14 @@ export const PlanogramManager: React.FC = () => {
         shelves: editingPlanogram.shelves,
       };
 
-      let savedPlanogram;
       // Check if we're editing an existing planogram by looking for it in the planograms list
       const existingPlanogram = planograms.find((p) => p.id === editingPlanogram.id);
 
       if (existingPlanogram) {
-        savedPlanogram = await planogramService.updatePlanogram(editingPlanogram.id, planogramData);
+        await planogramService.updatePlanogram(editingPlanogram.id, planogramData);
         toast.success("Planogram updated successfully");
       } else {
-        savedPlanogram = await planogramService.createPlanogram(planogramData);
+        await planogramService.createPlanogram(planogramData);
         toast.success("Planogram created successfully");
       }
 
@@ -307,12 +314,17 @@ export const PlanogramManager: React.FC = () => {
       const updatedPlanograms = await planogramService.listPlanograms();
       setPlanograms(updatedPlanograms);
 
+      // Reset form state
       setIsDialogOpen(false);
       setEditingPlanogram(null);
       setPlanogramName("");
       setUploadedImage(null);
       setImageFile(null);
       setGridDetected(false);
+      setError(null);
+
+      // Dispatch event to notify other components
+      window.dispatchEvent(new Event("planogram-dialog-close"));
     } catch (error) {
       console.error("Error saving planogram:", error);
       if (error instanceof Error) {
@@ -320,6 +332,8 @@ export const PlanogramManager: React.FC = () => {
       } else {
         toast.error("Failed to save planogram. Please check the data and try again.");
       }
+    } finally {
+      setIsSaving(false);
     }
   };
 
